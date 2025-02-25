@@ -449,6 +449,8 @@ def main():
 
 
         return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
+    
+    
 
 def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
     st.header("Estrategia Actual")
