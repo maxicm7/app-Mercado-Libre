@@ -636,8 +636,7 @@ def main():
         
         
         
-                    mime='text/csv',
-            )
+            
 
     def competencia(df, fecha_inicio, fecha_fin):
         st.header("Análisis de la Competencia")
