@@ -78,30 +78,22 @@ def main():
             st.header("Análisis de Mercado")
             st.subheader("Gráfica de visitas por vendedores")
 
-
             # Filtro de fecha aplicado a todo el analisis de mercado
             df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
 
             if df_filtrado.empty:
                 st.warning("No hay datos en el rango de fechas seleccionado.")
-                return df_filtrado # Retornar el DataFrame filtrado
+                return None, None  # Retornar None para ambos DataFrames
 
-            def vendedores_visitas(df_filtrado): # Recibe el DataFrame filtrado como argumento
-                """
-                Crea una barra de colores interactiva con los vendedores principales por número de visitas,
-                filtrando por un rango de fechas.
+            # --- Diccionario para almacenar resultados ---
+            resultados = {}
 
-                Args:
-                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Vendedores', 'Visitas' y 'Fecha'.
-
-                Returns:
-                    Una figura de Plotly Express que muestra la barra de colores con los vendedores principales.
-                """
-
+            # --- Análisis y Visualizaciones (Funciones internas) ---
+            def vendedores_visitas(df_filtrado):
+                nonlocal resultados  # Permite modificar la variable 'resultados'
                 if df_filtrado is None or 'Vendedores' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
-                    st.warning("El DataFrame no tiene las columnas necesarias ('Vendedores', 'Visitas').  Asegúrese de cargar los datos correctamente.")
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Vendedores', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
-
 
                 # Agrupar por vendedor y sumar las visitas
                 df_sum = df_filtrado.groupby('Vendedores')['Visitas'].sum()
@@ -112,6 +104,10 @@ def main():
 
                 # Ordenar de forma descendente y seleccionar los principales
                 df_sum = df_sum.sort_values(ascending=False).head(head)
+
+                # Almacenar resultados
+                resultados['Top Vendedores'] = df_sum.index.tolist() # Guarda los nombres de los vendedores
+                resultados['Visitas Top Vendedores'] = df_sum.values.tolist() # Guarda las visitas
 
                 # Crear la barra de colores con Plotly Express
                 fig = px.bar(df_sum,
@@ -131,23 +127,8 @@ def main():
                 # Mostrar la figura
                 st.plotly_chart(fig)
 
-            # Llamar a la función de visualización
-            vendedores_visitas(df_filtrado)
-
-            #Grafica de Visitas x Categoría
-
             def vendedores_vistas(df_filtrado):
-                """
-                Crea una barra de colores interactiva con las categorías principales por número de visitas,
-                filtrando por un rango de fechas.
-
-                Args:
-                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Visitas'.
-
-                Returns:
-                    Una figura de Plotly Express que muestra la barra de colores con las categorías principales.
-                """
-
+                nonlocal resultados
                 if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
                     st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas').  Asegúrese de cargar los datos correctamente.")
                     return
@@ -160,6 +141,10 @@ def main():
 
                 # Ordenar de forma descendente y seleccionar los principales
                 df_sum = df_sum.sort_values(ascending=False).head(head)
+
+                # Almacenar resultados
+                resultados['Top Categorías'] = df_sum.index.tolist()
+                resultados['Visitas Top Categorías'] = df_sum.values.tolist()
 
                 # Crear la barra de colores con Plotly Express
                 fig = px.bar(df_sum,
@@ -178,18 +163,9 @@ def main():
 
                 # Mostrar la figura
                 st.plotly_chart(fig)
-            vendedores_vistas(df_filtrado)
 
             def estado_salud_categorias(df_filtrado):
-                """
-                Crea una barra de colores interactiva con las categorías principales por el estado de salud promedio.
-
-                Args:
-                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Estado de Salud'.
-
-                Returns:
-                    Una figura de Plotly Express que muestra la barra de colores con las categorías principales y su estado de salud promedio.
-                """
+                nonlocal resultados
                 if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns:
                     st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Estado de Salud'). Asegúrese de cargar los datos correctamente.")
                     return
@@ -203,6 +179,10 @@ def main():
 
                 # Ordenar de forma descendente y seleccionar los principales
                 df_mean = df_mean.sort_values(ascending=False).head(head)
+
+                # Almacenar resultados
+                resultados['Top Categorías (Salud)'] = df_mean.index.tolist()
+                resultados['Salud Promedio Top Categorías'] = df_mean.values.tolist()
 
                 # Crear la barra de colores con Plotly Express
                 fig = px.bar(df_mean,
@@ -222,20 +202,8 @@ def main():
                 # Mostrar la figura en Streamlit
                 st.plotly_chart(fig)
 
-
-            st.subheader("Gráfica de Estado de Salud por Categorías")
-            estado_salud_categorias(df_filtrado) # Llamar a la función estado_salud_categorias
-
             def analizar_disponibilidad_categorias(df_filtrado):
-                """
-                Analiza la cantidad disponible por categoría y calcula el promedio.
-
-                Args:
-                    df_filtrado: DataFrame filtrado que contiene las columnas 'Categoría' y 'Cantidad Disponible'.
-
-                Returns:
-                    None: Muestra el gráfico directamente en Streamlit.
-                """
+                nonlocal resultados
                 if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns:
                     st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Cantidad Disponible'). Asegúrese de cargar los datos correctamente.")
                     return
@@ -250,6 +218,10 @@ def main():
 
                 # Ordenar y seleccionar el top
                 df_promedio = df_promedio.sort_values(by='Promedio Disponible', ascending=False).head(head)
+
+                # Almacenar resultados
+                resultados['Top Categorías (Disponibilidad)'] = df_promedio['Categoría'].tolist()
+                resultados['Disponibilidad Promedio Top Categorías'] = df_promedio['Promedio Disponible'].tolist()
 
                 # Crear el gráfico de barras
                 fig = px.bar(df_promedio,
@@ -270,12 +242,7 @@ def main():
                 st.plotly_chart(fig)
 
             def oem_efficiency(df_filtrado):
-                """
-                Calculates and displays the OEM efficiency (Visits / Count of OEM)
-
-                Args:
-                    df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
-                """
+                nonlocal resultados
                 if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
                     st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
@@ -302,6 +269,10 @@ def main():
                 # Sort by efficiency and get the top N
                 top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n)
 
+                # Almacenar resultados
+                resultados['Top OEMs (Eficiencia)'] = top_oem_efficiency.index.tolist()
+                resultados['Eficiencia Top OEMs'] = top_oem_efficiency.values.tolist()
+
                 # Create the bar chart with Plotly Express
                 fig = px.bar(
                     x=top_oem_efficiency.index,
@@ -321,12 +292,7 @@ def main():
                 st.plotly_chart(fig)
 
             def categoria_efficiency(df_filtrado):
-                """
-                Calculates and displays the Category efficiency (Visits / Count of Category)
-
-                Args:
-                    df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
-                """
+                nonlocal resultados
                 if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
                     st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
@@ -353,6 +319,10 @@ def main():
                 # Sort by efficiency and get the top N
                 top_cat_efficiency = cat_efficiency.sort_values(ascending=False).head(top_n)
 
+                # Almacenar resultados
+                resultados['Top Categorías (Eficiencia)'] = top_cat_efficiency.index.tolist()
+                resultados['Eficiencia Top Categorías'] = top_cat_efficiency.values.tolist()
+
                 # Create the bar chart with Plotly Express
                 fig = px.bar(
                     x=top_cat_efficiency.index,
@@ -371,37 +341,81 @@ def main():
 
                 st.plotly_chart(fig)
 
-
-            st.subheader("Eficiencia por OEM")
+            # Llamar a las funciones de visualización
+            vendedores_visitas(df_filtrado)
+            vendedores_vistas(df_filtrado)
+            estado_salud_categorias(df_filtrado)
+            analizar_disponibilidad_categorias(df_filtrado)
             oem_efficiency(df_filtrado)
-
-            st.subheader("Eficiencia por Categoría")
             categoria_efficiency(df_filtrado)
 
+            # --- Crear DataFrame de Resultados ---
+            df_resultados = pd.DataFrame.from_dict(resultados, orient='index').transpose()
+            st.subheader("DataFrame de Resultados")
+            st.dataframe(df_resultados)
 
-            st.subheader("Gráfica de Cantidades Disponibles por Categorías")
-            analizar_disponibilidad_categorias(df_filtrado)
+            # --- Descargar DataFrame de Resultados a CSV ---
+            csv_resultados = df_resultados.to_csv(index=False)
+            b64_resultados = base64.b64encode(csv_resultados.encode()).decode()
+            href_resultados = f'<a href="data:file/csv;base64,{b64_resultados}" download="resultados.csv">Descargar DataFrame de Resultados como CSV</a>'
+            st.markdown(href_resultados, unsafe_allow_html=True)
 
-            # --- DataFrame Resumen ---
-            st.subheader("DataFrame Resumen")
+            # --- DataFrame Combinado (Nueva Sección) ---
+            st.subheader("DataFrame Combinado")
 
-            # Crear un DataFrame resumen (puedes personalizarlo)
-            resumen_data = {
-                'Total Visitas': df_filtrado['Visitas'].sum(),
-                'Promedio Estado de Salud': df_filtrado['Estado de Salud'].mean(),
-                'Promedio Cantidad Disponible': df_filtrado['Cantidad Disponible'].mean()
-            }
-            df_resumen = pd.DataFrame(resumen_data, index=['Resumen'])
+            # Selector de vendedor
+            vendedores_unicos = df_filtrado['Vendedores'].unique()
+            vendedores = st.selectbox("Selecciona un vendedor", vendedores_unicos)
 
-            st.dataframe(df_resumen)
+            def crear_dataframe_combinado(df, vendedores):
+                """Crea un DataFrame combinado con información relevante."""
+                if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
+                    st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
+                    return None
 
-            # --- Descargar DataFrame a CSV ---
-            csv = df_resumen.to_csv(index=False)
-            b64 = base64.b64encode(csv.encode()).decode()  # Encode para descarga
-            href = f'<a href="data:file/csv;base64,{b64}" download="resumen.csv">Descargar DataFrame Resumen como CSV</a>'
-            st.markdown(href, unsafe_allow_html=True)
+                df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
 
-            return df_filtrado # Retornar el DataFrame filtrado
+                # Calcular la cantidad de publicaciones por categoría
+                publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
+                df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
+
+                # Agrupar por 'OEM' y calcular la suma de visitas
+                oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
+                df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
+
+                # Calcular eficiencia del vendedor
+                total_visitas = df_vendedor['Visitas'].sum()
+                total_titulos = df_vendedor['Título'].nunique()
+                eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
+                df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
+
+                # Eliminar duplicados para que cada fila represente una combinación única
+                df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
+
+                # Calcular la eficiencia
+                visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
+                eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
+
+                df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
+
+                # Calcular Health promedio por categoria
+                health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
+                df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
+                df_resumen = df_resumen.fillna(0)
+
+                return df_resumen
+
+            df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
+
+            if df_combinado is not None:
+                st.dataframe(df_combinado)
+                # Opción de descarga (csv)
+                csv_combinado = df_combinado.to_csv(index=False)
+                b64_combinado = base64.b64encode(csv_combinado.encode()).decode()
+                href_combinado = f'<a href="data:file/csv;base64,{b64_combinado}" download="data_combinada.csv">Descargar DataFrame Combinado como CSV</a>'
+                st.markdown(href_combinado, unsafe_allow_html=True)
+
+            return df_resultados, df_combinado  # Retornar ambos DataFrames
 
 
 
