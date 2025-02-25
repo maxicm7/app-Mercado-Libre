@@ -71,6 +71,8 @@ def main():
  
 
 
+ 
+
     def mercado(df, fecha_inicio, fecha_fin):  # Recibe el DataFrame y las fechas como argumento
             st.header("Análisis de Mercado")
             st.subheader("Gráfica de visitas por vendedores")
@@ -398,7 +400,62 @@ def main():
             href = f'<a href="data:file/csv;base64,{b64}" download="resumen.csv">Descargar DataFrame Resumen como CSV</a>'
             st.markdown(href, unsafe_allow_html=True)
 
-            return df_filtrado # Retornar el DataFrame filtrado    
+            # --- DataFrame Combinado (Nueva Sección) ---
+            st.subheader("DataFrame Combinado")
+
+            # Selector de vendedor
+            vendedores_unicos = df_filtrado['Vendedores'].unique()
+            vendedores = st.selectbox("Selecciona un vendedor", vendedores_unicos)
+
+            def crear_dataframe_combinado(df, vendedores):
+                """Crea un DataFrame combinado con información relevante."""
+                if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
+                    st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
+                    return None
+
+                df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
+
+                # Calcular la cantidad de publicaciones por categoría
+                publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
+                df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
+
+                # Agrupar por 'OEM' y calcular la suma de visitas
+                oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
+                df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
+
+                # Calcular eficiencia del vendedor
+                total_visitas = df_vendedor['Visitas'].sum()
+                total_titulos = df_vendedor['Título'].nunique()
+                eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
+                df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
+
+                # Eliminar duplicados para que cada fila represente una combinación única
+                df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
+
+                # Calcular la eficiencia
+                visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
+                eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
+
+                df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
+
+                # Calcular Health promedio por categoria
+                health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
+                df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
+                df_resumen = df_resumen.fillna(0)
+
+                return df_resumen
+
+            df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
+
+            if df_combinado is not None:
+                st.dataframe(df_combinado)
+                # Opción de descarga (csv)
+                csv = df_combinado.to_csv(index=False)
+                b64_combinado = base64.b64encode(csv.encode()).decode()
+                href_combinado = f'<a href="data:file/csv;base64,{b64_combinado}" download="data_combinada.csv">Descargar DataFrame Combinado como CSV</a>'
+                st.markdown(href_combinado, unsafe_allow_html=True)
+
+            return df_filtrado # Retornar el DataFrame filtrado para usarlo en la siguiente sección 
 
 
     def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
