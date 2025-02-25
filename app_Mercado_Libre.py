@@ -450,249 +450,249 @@ def main():
 
         return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
 
-    def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
-        st.header("Estrategia Actual")
+def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
+    st.header("Estrategia Actual")
 
-        # Verifica si df_filtrado está vacío antes de continuar
-        if df_filtrado is None or df_filtrado.empty:
-            st.warning("No hay datos en el rango de fechas seleccionado.")
+    # Verifica si df_filtrado está vacío antes de continuar
+    if df_filtrado is None or df_filtrado.empty:
+        st.warning("No hay datos en el rango de fechas seleccionado.")
+        return
+
+    lista_vendedores = df_filtrado['Vendedores'].unique()
+    vendedores = st.selectbox('Seleccione un Vendedor', lista_vendedores)
+
+    # --- Visitas por Título ---
+    st.subheader(f"Grafica de Visitas por Título para {vendedores}")
+
+    def visitas_titulos_vendedores(df_filtrado, vendedores):
+        """Muestra la gráfica de visitas por título para un vendedor específico."""
+        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
             return
 
-        lista_vendedores = df_filtrado['Vendedores'].unique()
-        vendedores = st.selectbox('Seleccione un Vendedor', lista_vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        df_sum = df_vendedor.groupby('Título')['Visitas'].sum().reset_index()
+        head = st.slider('Top Títulos por Visitas', 1, 50, 20, key="titulos_visitas")  # key para evitar conflicto de sliders
+        df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
 
-        # --- Visitas por Título ---
-        st.subheader(f"Grafica de Visitas por Título para {vendedores}")
+        fig = px.bar(df_sum, x='Título', y='Visitas',
+                    title=f'Top {head} Títulos por Visitas para {vendedores}',
+                    labels={'Título': 'Título', 'Visitas': 'Visitas'},
+                    color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
+        fig.update_layout(xaxis_title='Título', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-        def visitas_titulos_vendedores(df_filtrado, vendedores):
-            """Muestra la gráfica de visitas por título para un vendedor específico."""
-            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+    visitas_titulos_vendedores(df_filtrado, vendedores)
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            df_sum = df_vendedor.groupby('Título')['Visitas'].sum().reset_index()
-            head = st.slider('Top Títulos por Visitas', 1, 50, 20, key="titulos_visitas")  # key para evitar conflicto de sliders
-            df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
+    # --- Visitas por OEM ---
+    st.subheader(f"Gráfica de Visitas por OEM para {vendedores}")
 
-            fig = px.bar(df_sum, x='Título', y='Visitas',
-                        title=f'Top {head} Títulos por Visitas para {vendedores}',
-                        labels={'Título': 'Título', 'Visitas': 'Visitas'},
-                        color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='Título', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def visitas_oem_vendedores(df_filtrado, vendedores):
+        """Muestra la gráfica de visitas por OEM para un vendedor específico."""
+        if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        visitas_titulos_vendedores(df_filtrado, vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        df_sum = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index()
+        head = st.slider('Top OEMs por Visitas', 1, 50, 20, key="oem_visitas")  # key para evitar conflicto de sliders
+        df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
 
-        # --- Visitas por OEM ---
-        st.subheader(f"Gráfica de Visitas por OEM para {vendedores}")
+        fig = px.bar(df_sum, x='OEM', y='Visitas',
+                    title=f'Top {head} OEMs por Visitas para {vendedores}',
+                    labels={'OEM': 'OEM', 'Visitas': 'Visitas'},
+                    color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
+        fig.update_layout(xaxis_title='OEM', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-        def visitas_oem_vendedores(df_filtrado, vendedores):
-            """Muestra la gráfica de visitas por OEM para un vendedor específico."""
-            if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+    visitas_oem_vendedores(df_filtrado, vendedores)
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            df_sum = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index()
-            head = st.slider('Top OEMs por Visitas', 1, 50, 20, key="oem_visitas")  # key para evitar conflicto de sliders
-            df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
+    # --- Cantidad de Publicaciones por Categoría ---
+    st.subheader(f"Gráfica de Cantidad de Publicaciones por Categoría para {vendedores}")
 
-            fig = px.bar(df_sum, x='OEM', y='Visitas',
-                        title=f'Top {head} OEMs por Visitas para {vendedores}',
-                        labels={'OEM': 'OEM', 'Visitas': 'Visitas'},
-                        color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='OEM', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def publicaciones_por_categoria(df_filtrado, vendedores):
+        """Muestra la cantidad de publicaciones por categoría para un vendedor."""
+        if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'Categoría' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        visitas_oem_vendedores(df_filtrado, vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        df_count = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad') # Usamos size() para contar
+        head = st.slider('Top Categorías por Publicaciones', 1, 50, 20, key="cat_publicaciones")  # key para evitar conflicto de sliders
+        df_count = df_count.sort_values(by='Cantidad', ascending=False).head(head)
 
-        # --- Cantidad de Publicaciones por Categoría ---
-        st.subheader(f"Gráfica de Cantidad de Publicaciones por Categoría para {vendedores}")
+        fig = px.bar(df_count, x='Categoría', y='Cantidad',
+                    title=f'Top {head} Categorías por Cantidad de Publicaciones para {vendedores}',
+                    labels={'Categoría': 'Categoría', 'Cantidad': 'Cantidad de Publicaciones'},
+                    color='Cantidad', color_continuous_scale=px.colors.sequential.Plasma)
+        fig.update_layout(xaxis_title='Categoría', yaxis_title='Cantidad de Publicaciones', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-        def publicaciones_por_categoria(df_filtrado, vendedores):
-            """Muestra la cantidad de publicaciones por categoría para un vendedor."""
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'Categoría' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+    publicaciones_por_categoria(df_filtrado, vendedores)
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            df_count = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad') # Usamos size() para contar
-            head = st.slider('Top Categorías por Publicaciones', 1, 50, 20, key="cat_publicaciones")  # key para evitar conflicto de sliders
-            df_count = df_count.sort_values(by='Cantidad', ascending=False).head(head)
+    # --- Cantidades Disponibles por Título ---
+    st.subheader(f"Gráfica de Cantidades Disponibles por Título para {vendedores}")
 
-            fig = px.bar(df_count, x='Categoría', y='Cantidad',
-                        title=f'Top {head} Categorías por Cantidad de Publicaciones para {vendedores}',
-                        labels={'Categoría': 'Categoría', 'Cantidad': 'Cantidad de Publicaciones'},
-                        color='Cantidad', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='Categoría', yaxis_title='Cantidad de Publicaciones', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def cantidades_disponibles_por_titulo(df_filtrado, vendedores):
+        """Muestra la cantidad disponible por título para un vendedor."""
+        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'Título', 'Cantidad Disponible' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        publicaciones_por_categoria(df_filtrado, vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        df_sum = df_vendedor.groupby('Título')['Cantidad Disponible'].sum().reset_index()
+        head = st.slider('Top Títulos por Cantidad Disponible', 1, 50, 20, key="titulo_cantidad")  # key para evitar conflicto de sliders
+        df_sum = df_sum.sort_values(by='Cantidad Disponible', ascending=False).head(head)
 
-        # --- Cantidades Disponibles por Título ---
-        st.subheader(f"Gráfica de Cantidades Disponibles por Título para {vendedores}")
+        fig = px.bar(df_sum, x='Título', y='Cantidad Disponible',
+                    title=f'Top {head} Títulos por Cantidad Disponible para {vendedores}',
+                    labels={'Título': 'Título', 'Cantidad Disponible': 'Cantidad Disponible'},
+                    color='Cantidad Disponible', color_continuous_scale=px.colors.sequential.Plasma)
+        fig.update_layout(xaxis_title='Título', yaxis_title='Cantidad Disponible', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-        def cantidades_disponibles_por_titulo(df_filtrado, vendedores):
-            """Muestra la cantidad disponible por título para un vendedor."""
-            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'Título', 'Cantidad Disponible' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+    cantidades_disponibles_por_titulo(df_filtrado, vendedores)
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            df_sum = df_vendedor.groupby('Título')['Cantidad Disponible'].sum().reset_index()
-            head = st.slider('Top Títulos por Cantidad Disponible', 1, 50, 20, key="titulo_cantidad")  # key para evitar conflicto de sliders
-            df_sum = df_sum.sort_values(by='Cantidad Disponible', ascending=False).head(head)
+    # --- Eficiencia en el Mercado (OEM) ---
+    st.subheader(f"Eficiencia en el Mercado (OEM) para {vendedores}")
 
-            fig = px.bar(df_sum, x='Título', y='Cantidad Disponible',
-                        title=f'Top {head} Títulos por Cantidad Disponible para {vendedores}',
-                        labels={'Título': 'Título', 'Cantidad Disponible': 'Cantidad Disponible'},
-                        color='Cantidad Disponible', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='Título', yaxis_title='Cantidad Disponible', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def eficiencia_mercado_oem(df, vendedores):
+        """Calcula y muestra la eficiencia en el mercado (OEM) para un vendedor."""
+        if df is None or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Vendedores' not in df.columns:
+            st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        cantidades_disponibles_por_titulo(df_filtrado, vendedores)
+        # Total de visitas de los OEM del vendedor
+        df_vendedor = df[df['Vendedores'] == vendedores]
+        visitas_vendedor = df_vendedor.groupby('OEM')['Visitas'].sum()
 
-        # --- Eficiencia en el Mercado (OEM) ---
-        st.subheader(f"Eficiencia en el Mercado (OEM) para {vendedores}")
+        # Total de visitas de esos mismos OEM de todos los vendedores
+        visitas_totales = df.groupby('OEM')['Visitas'].sum()
 
-        def eficiencia_mercado_oem(df, vendedores):
-            """Calcula y muestra la eficiencia en el mercado (OEM) para un vendedor."""
-            if df is None or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Vendedores' not in df.columns:
-                st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+        # Calcular la eficiencia
+        eficiencia = (visitas_vendedor / visitas_totales).fillna(0)  # Manejar divisiones por cero
 
-            # Total de visitas de los OEM del vendedor
-            df_vendedor = df[df['Vendedores'] == vendedores]
-            visitas_vendedor = df_vendedor.groupby('OEM')['Visitas'].sum()
+        # Crear DataFrame para la gráfica
+        df_eficiencia = eficiencia.reset_index(name='Eficiencia')
+        df_eficiencia = df_eficiencia.sort_values(by='Eficiencia', ascending=False)
+        head = st.slider('Top OEMs por Eficiencia', 1, 50, 20, key="oem_eficiencia")  # key para evitar conflicto de sliders
+        df_eficiencia = df_eficiencia.head(head)
 
-            # Total de visitas de esos mismos OEM de todos los vendedores
-            visitas_totales = df.groupby('OEM')['Visitas'].sum()
+        # Crear la gráfica
+        fig = px.bar(df_eficiencia, x='OEM', y='Eficiencia',
+                    title=f'Top {head} Eficiencia en el Mercado (OEM) para {vendedores}',
+                    labels={'OEM': 'OEM', 'Eficiencia': 'Eficiencia'},
+                    color='Eficiencia', color_continuous_scale=px.colors.sequential.Plasma)
+        fig.update_layout(xaxis_title='OEM', yaxis_title='Eficiencia', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-            # Calcular la eficiencia
-            eficiencia = (visitas_vendedor / visitas_totales).fillna(0)  # Manejar divisiones por cero
+    eficiencia_mercado_oem(df_filtrado, vendedores)
 
-            # Crear DataFrame para la gráfica
-            df_eficiencia = eficiencia.reset_index(name='Eficiencia')
-            df_eficiencia = df_eficiencia.sort_values(by='Eficiencia', ascending=False)
-            head = st.slider('Top OEMs por Eficiencia', 1, 50, 20, key="oem_eficiencia")  # key para evitar conflicto de sliders
-            df_eficiencia = df_eficiencia.head(head)
+    # --- Health Medio por Categoría ---
+    st.subheader(f"Health Medio por Categoría para {vendedores}")
 
-            # Crear la gráfica
-            fig = px.bar(df_eficiencia, x='OEM', y='Eficiencia',
-                        title=f'Top {head} Eficiencia en el Mercado (OEM) para {vendedores}',
-                        labels={'OEM': 'OEM', 'Eficiencia': 'Eficiencia'},
-                        color='Eficiencia', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='OEM', yaxis_title='Eficiencia', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def health_medio_por_categoria(df_filtrado, vendedores):
+        """Calcula y muestra el health medio por categoría para un vendedor."""
+        if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'Categoría', 'Estado de Salud' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        eficiencia_mercado_oem(df_filtrado, vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        health_medio = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index()
+        health_medio = health_medio.sort_values(by='Estado de Salud', ascending=False)
 
-        # --- Health Medio por Categoría ---
-        st.subheader(f"Health Medio por Categoría para {vendedores}")
+        head = st.slider('Top Categorías por Health Medio', 1, 50, 20, key="health_medio")  # key para evitar conflicto de sliders
+        health_medio = health_medio.head(head)
 
-        def health_medio_por_categoria(df_filtrado, vendedores):
-            """Calcula y muestra el health medio por categoría para un vendedor."""
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'Categoría', 'Estado de Salud' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+        fig = px.bar(health_medio, x='Categoría', y='Estado de Salud',
+                    title=f'Top {head} Health Medio por Categoría para {vendedores}',
+                    labels={'Categoría': 'Categoría', 'Estado de Salud': 'Health Medio'},
+                    color='Estado de Salud', color_continuous_scale=px.colors.sequential.Plasma)
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            health_medio = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index()
-            health_medio = health_medio.sort_values(by='Estado de Salud', ascending=False)
+        fig.update_layout(xaxis_title='Categoría', yaxis_title='Health Medio', xaxis={'categoryorder': 'total descending'})
+        st.plotly_chart(fig)
 
-            head = st.slider('Top Categorías por Health Medio', 1, 50, 20, key="health_medio")  # key para evitar conflicto de sliders
-            health_medio = health_medio.head(head)
+    health_medio_por_categoria(df_filtrado, vendedores)
 
-            fig = px.bar(health_medio, x='Categoría', y='Estado de Salud',
-                        title=f'Top {head} Health Medio por Categoría para {vendedores}',
-                        labels={'Categoría': 'Categoría', 'Estado de Salud': 'Health Medio'},
-                        color='Estado de Salud', color_continuous_scale=px.colors.sequential.Plasma)
+    # --- Eficiencia del Vendedor ---
+    st.subheader(f"Eficiencia del Vendedor ({vendedores})")
 
-            fig.update_layout(xaxis_title='Categoría', yaxis_title='Health Medio', xaxis={'categoryorder': 'total descending'})
-            st.plotly_chart(fig)
+    def eficiencia_del_vendedor(df_filtrado, vendedores):
+        """Calcula y muestra la eficiencia del vendedor (Total Visitas / Total Títulos)."""
+        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+            st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
+            return
 
-        health_medio_por_categoria(df_filtrado, vendedores)
+        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+        total_visitas = df_vendedor['Visitas'].sum()
+        total_titulos = df_vendedor['Título'].nunique()  # Usa nunique() para contar títulos únicos
 
-        # --- Eficiencia del Vendedor ---
-        st.subheader(f"Eficiencia del Vendedor ({vendedores})")
+        if total_titulos == 0:
+            st.warning("El vendedor no tiene títulos.")
+            return
 
-        def eficiencia_del_vendedor(df_filtrado, vendedores):
-            """Calcula y muestra la eficiencia del vendedor (Total Visitas / Total Títulos)."""
-            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-                st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-                return
+        eficiencia = total_visitas / total_titulos
 
-            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-            total_visitas = df_vendedor['Visitas'].sum()
-            total_titulos = df_vendedor['Título'].nunique()  # Usa nunique() para contar títulos únicos
+        st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
 
-            if total_titulos == 0:
-                st.warning("El vendedor no tiene títulos.")
-                return
+        # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
+        # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
 
-            eficiencia = total_visitas / total_titulos
+    eficiencia_del_vendedor(df_filtrado, vendedores)
 
-            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
+    # --- DataFrame con Información Combinada ---
+    st.subheader("DataFrame con Información Combinada")
 
-            # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
-            # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
+    def crear_dataframe_combinado(df, vendedores):
+        """Crea un DataFrame combinado con información relevante."""
+        if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
+            st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
+            return None
 
-        eficiencia_del_vendedor(df_filtrado, vendedores)
+        df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
 
-        # --- DataFrame con Información Combinada ---
-        st.subheader("DataFrame con Información Combinada")
+        # Calcular la cantidad de publicaciones por categoría
+        publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
+        df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
 
-        def crear_dataframe_combinado(df, vendedores):
-                        """Crea un DataFrame combinado con información relevante."""
-            if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
-                st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
-                return None
+        # Agrupar por 'OEM' y calcular la suma de visitas
+        oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
+        df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
 
-            df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
+        # Calcular eficiencia del vendedor
+        total_visitas = df_vendedor['Visitas'].sum()
+        total_titulos = df_vendedor['Título'].nunique()
+        eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
+        df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
 
-            # Calcular la cantidad de publicaciones por categoría
-            publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
-            df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
+        # Eliminar duplicados para que cada fila represente una combinación única
+        df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
 
-            # Agrupar por 'OEM' y calcular la suma de visitas
-            oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
-            df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
+        # Calcular la eficiencia
+        visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
+        eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
 
-            # Calcular eficiencia del vendedor
-            total_visitas = df_vendedor['Visitas'].sum()
-            total_titulos = df_vendedor['Título'].nunique()
-            eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
-            df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
+        df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
 
-            # Eliminar duplicados para que cada fila represente una combinación única
-            df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
+        # Calcular Health promedio por categoria
+        health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
+        df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
+        df_resumen = df_resumen.fillna(0)
 
-            # Calcular la eficiencia
-            visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
-            eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
+        return df_resumen
 
-            df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
+    df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
 
-            # Calcular Health promedio por categoria
-            health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
-            df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
-            df_resumen = df_resumen.fillna(0)
-
-            return df_resumen
-
-        df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
-
-        if df_combinado is not None:
-            st.dataframe(df_combinado)
-            # Opción de descarga (csv)
-            csv = df_combinado.to_csv(index=False)
-            st.download_button(
-                label="Descargar datos como CSV",
-                data=csv,
-                file_name='data_combinada.csv',
-                mime='text/csv',
-            )
+    if df_combinado is not None:
+        st.dataframe(df_combinado)
+        # Opción de descarga (csv)
+        csv = df_combinado.to_csv(index=False)
+        st.download_button(
+            label="Descargar datos como CSV",
+            data=csv,
+            file_name='data_combinada.csv',
+            mime='text/csv',
+        )
 
 
         
