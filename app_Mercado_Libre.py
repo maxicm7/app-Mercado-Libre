@@ -366,7 +366,16 @@ def main():
 
         st.subheader("Gráfica de Cantidades Disponibles por Categorías")
         analizar_disponibilidad_categorias(df_filtrado)
-        
+
+        # Botón de descarga CSV
+        csv = df_filtrado.to_csv(index=False)
+        st.download_button(
+            label="Descargar datos del mercado como CSV",
+            data=csv,
+            file_name='datos_mercado.csv',
+            mime='text/csv',
+        )
+
         return df_filtrado # Retornar el DataFrame filtrado
 
 
@@ -627,7 +636,8 @@ def main():
         
         
         
-        
+                    mime='text/csv',
+            )
 
     def competencia(df, fecha_inicio, fecha_fin):
         st.header("Análisis de la Competencia")
