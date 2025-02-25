@@ -1,11 +1,12 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
+from io import StringIO
 
 # Configuración de la página
 st.set_page_config(page_title='ANALIZADOR DE MERCADO PARA MERCADO LIBRE', layout='wide')
 
-# Aumentar el tamaño máximo del archivo cargado a 200MB (en bytes)
+# Aumentar el tamaño máximo del archivo cargado a 1000MB (en bytes)
 MAX_FILE_SIZE = 1000 * 1024 * 1024  # 1000MB. Streamlit cloud tiene un limite de 200mb
 
 def main():
@@ -68,7 +69,9 @@ def main():
 
         if df_filtrado.empty:
             st.warning("No hay datos en el rango de fechas seleccionado.")
-            return df_filtrado # Retornar el DataFrame filtrado
+            # Evitar errores retornando un DataFrame vacío
+            df_para_descarga = pd.DataFrame()
+            return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
 
         # DataFrame para la descarga
         df_para_descarga = pd.DataFrame()  # Initialize an empty DataFrame
@@ -123,6 +126,11 @@ def main():
             # Actualizar el DataFrame para descarga
             df_para_descarga = df_sum.copy()  # Capture current df_sum result
 
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(df_sum)
+
+
         # Llamar a la función de visualización
         vendedores_visitas(df_filtrado)
 
@@ -175,6 +183,11 @@ def main():
             # Update DataFrame for download (append this result)
             df_para_descarga = pd.concat([df_para_descarga, df_sum], ignore_index=True)
 
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(df_sum)
+
+
         vendedores_vistas(df_filtrado)
 
         def estado_salud_categorias(df_filtrado):
@@ -224,6 +237,9 @@ def main():
             # Update DataFrame for download (append this result)
             df_para_descarga = pd.concat([df_para_descarga, df_mean], ignore_index=True)
 
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(df_mean)
 
         st.subheader("Gráfica de Estado de Salud por Categorías")
         estado_salud_categorias(df_filtrado) # Llamar a la función estado_salud_categorias
@@ -275,6 +291,10 @@ def main():
 
             # Update DataFrame for download (append this result)
             df_para_descarga = pd.concat([df_para_descarga, df_promedio], ignore_index=True)
+
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(df_promedio)
 
         def oem_efficiency(df_filtrado):
             """
@@ -332,6 +352,10 @@ def main():
 
             # Update DataFrame for download (append this result)
             df_para_descarga = pd.concat([df_para_descarga, top_oem_efficiency], ignore_index=True)
+
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(top_oem_efficiency)
 
         def categoria_efficiency(df_filtrado):
             """
@@ -392,6 +416,10 @@ def main():
             # Update DataFrame for download (append this result)
             df_para_descarga = pd.concat([df_para_descarga, top_cat_efficiency], ignore_index=True)
 
+            # Display table
+            st.subheader("Tabla de datos")
+            st.dataframe(top_cat_efficiency)
+
         st.subheader("Eficiencia por OEM")
         oem_efficiency(df_filtrado)
 
@@ -406,7 +434,12 @@ def main():
         df_para_descarga = df_para_descarga.drop_duplicates()
 
         # Botón de descarga CSV
-        csv = df_para_descarga.to_csv(index=False)
+
+        # Use StringIO to create an in-memory text buffer
+        csv_buffer = StringIO()
+        df_para_descarga.to_csv(csv_buffer, index=False)
+        csv = csv_buffer.getvalue()
+
         st.download_button(
             label="Descargar datos del mercado como CSV",
             data=csv,
@@ -414,14 +447,8 @@ def main():
             mime='text/csv',
         )
 
-        return df_filtrado # Retornar el DataFrame filtrado
 
-
-
-
-
-
-
+        return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
 
     def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
         st.header("Estrategia Actual")
@@ -617,7 +644,7 @@ def main():
         st.subheader("DataFrame con Información Combinada")
 
         def crear_dataframe_combinado(df, vendedores):
-            """Crea un DataFrame combinado con información relevante."""
+                        """Crea un DataFrame combinado con información relevante."""
             if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
                 st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
                 return None
@@ -675,7 +702,6 @@ def main():
         
         
             
-
     def competencia(df, fecha_inicio, fecha_fin):
         st.header("Análisis de la Competencia")
 
@@ -876,13 +902,6 @@ def main():
         
         
         
-        
-
-
-
-
-
-
 
     def estrategia_futura(df, fecha_inicio, fecha_fin):
         st.header("Estrategia Futura")
@@ -1089,18 +1108,6 @@ def main():
                 mime='text/csv',
             )
 
-
-
-
-
-
-
-
-
-
-
-
-
     # Lógica principal basada en la selección del menú
     data = pagina_principal()  # Cargar los datos y guardarlos en la variable data
 
@@ -1124,13 +1131,11 @@ def main():
     # Definir df_filtrado fuera de los bloques if/elif
     df_filtrado = pd.DataFrame() # DataFrame vacio como valor por defecto
 
-
     if seleccion == 'Página Principal':
         pass  # La página principal ya se ha mostrado, no hay nada más que hacer aquí.
     elif seleccion == 'Mercado':
         if data is not None and fecha_inicio is not None and fecha_fin is not None:  # Verificar si los datos se cargaron correctamente y las fechas están definidas
-            df_filtrado = data[(data['Fecha'] >= fecha_inicio) & (data['Fecha'] <= fecha_fin)]  # Pasar el DataFrame y las fechas a la función mercado
-            mercado(data, fecha_inicio, fecha_fin)
+            df_filtrado, df_descarga = mercado(data, fecha_inicio, fecha_fin)
         else:
              st.warning("Por favor, cargue los datos en la página principal y asegúrese de que la columna 'Fecha' esté presente.")
     elif seleccion == 'Estrategia Actual':
@@ -1142,26 +1147,16 @@ def main():
                 st.warning("No hay datos en el rango de fechas seleccionado.")
         else:
             st.warning("Por favor, cargue los datos en la página principal y asegúrese de que la columna 'Fecha' esté presente.")
-       
-        
     elif seleccion == 'Competencia':
         if data is not None and fecha_inicio is not None and fecha_fin is not None:
             competencia(data, fecha_inicio, fecha_fin)  # Pasar df, fecha_inicio y fecha_fin
         else:
-            st.warning("Por favor, cargue los datos en la página principal y seleccione un rango de fechas.")      
-      
-
-      
-      
-        
- 
-        
-        
+            st.warning("Por favor, cargue los datos en la página principal y seleccione un rango de fechas.")
     elif seleccion == 'Estrategia Futura':
         if data is not None and fecha_inicio is not None and fecha_fin is not None:
             estrategia_futura(data, fecha_inicio, fecha_fin)
         else:
-            st.warning("Por favor, cargue los datos en la página principal y seleccione un rango de fechas.")    
+            st.warning("Por favor, cargue los datos en la página principal y seleccione un rango de fechas.")
 
 if __name__ == '__main__':
     main()
