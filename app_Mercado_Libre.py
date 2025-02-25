@@ -60,641 +60,590 @@ def main():
             st.info("Por favor, cargue un archivo Excel.")
             return None
 
+
+
+
+
+
+
+
+
+ 
+
+
     def mercado(df, fecha_inicio, fecha_fin):  # Recibe el DataFrame y las fechas como argumento
-        st.header("Análisis de Mercado")
-        st.subheader("Gráfica de visitas por vendedores")
+            st.header("Análisis de Mercado")
+            st.subheader("Gráfica de visitas por vendedores")
 
-        # Filtro de fecha aplicado a todo el analisis de mercado
-        df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)].copy() #Creo una copia para evitar errores de slice
 
-        if df_filtrado.empty:
+            # Filtro de fecha aplicado a todo el analisis de mercado
+            df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
+
+            if df_filtrado.empty:
+                st.warning("No hay datos en el rango de fechas seleccionado.")
+                return df_filtrado # Retornar el DataFrame filtrado
+
+            def vendedores_visitas(df_filtrado): # Recibe el DataFrame filtrado como argumento
+                """
+                Crea una barra de colores interactiva con los vendedores principales por número de visitas,
+                filtrando por un rango de fechas.
+
+                Args:
+                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Vendedores', 'Visitas' y 'Fecha'.
+
+                Returns:
+                    Una figura de Plotly Express que muestra la barra de colores con los vendedores principales.
+                """
+
+                if df_filtrado is None or 'Vendedores' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Vendedores', 'Visitas').  Asegúrese de cargar los datos correctamente.")
+                    return
+
+
+                # Agrupar por vendedor y sumar las visitas
+                df_sum = df_filtrado.groupby('Vendedores')['Visitas'].sum()
+
+                # Slider para el top de vendedores
+                head = st.slider("Top de vendedores", 1, 50, 20)
+                st.write(head)
+
+                # Ordenar de forma descendente y seleccionar los principales
+                df_sum = df_sum.sort_values(ascending=False).head(head)
+
+                # Crear la barra de colores con Plotly Express
+                fig = px.bar(df_sum,
+                            x=df_sum.index,
+                            y='Visitas',
+                            title=f'Top {head} Vendedores por Número de Visitas (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                            color=df_sum.values,  # Usar los valores de visitas para el color
+                            color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
+
+                # Personalizar el diseño (opcional)
+                fig.update_layout(
+                    xaxis_title="Vendedor",
+                    yaxis_title="Número de Visitas",
+                    xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
+                )
+
+                # Mostrar la figura
+                st.plotly_chart(fig)
+
+            # Llamar a la función de visualización
+            vendedores_visitas(df_filtrado)
+
+            #Grafica de Visitas x Categoría
+
+            def vendedores_vistas(df_filtrado):
+                """
+                Crea una barra de colores interactiva con las categorías principales por número de visitas,
+                filtrando por un rango de fechas.
+
+                Args:
+                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Visitas'.
+
+                Returns:
+                    Una figura de Plotly Express que muestra la barra de colores con las categorías principales.
+                """
+
+                if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas').  Asegúrese de cargar los datos correctamente.")
+                    return
+
+                # Agrupar por categoría y sumar las visitas
+                df_sum = df_filtrado.groupby('Categoría')['Visitas'].sum()
+
+                head = st.slider("Top de Categorías", 1, 50, 20)
+                st.write(head)
+
+                # Ordenar de forma descendente y seleccionar los principales
+                df_sum = df_sum.sort_values(ascending=False).head(head)
+
+                # Crear la barra de colores con Plotly Express
+                fig = px.bar(df_sum,
+                            x=df_sum.index,
+                            y='Visitas',
+                            title=f'Top {head} Categorías por Número de Visitas (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                            color=df_sum.values,  # Usar los valores de visitas para el color
+                            color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
+
+                # Personalizar el diseño (opcional)
+                fig.update_layout(
+                    xaxis_title="Categoría",
+                    yaxis_title="Número de Visitas",
+                    xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
+                )
+
+                # Mostrar la figura
+                st.plotly_chart(fig)
+            vendedores_vistas(df_filtrado)
+
+            def estado_salud_categorias(df_filtrado):
+                """
+                Crea una barra de colores interactiva con las categorías principales por el estado de salud promedio.
+
+                Args:
+                    df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Estado de Salud'.
+
+                Returns:
+                    Una figura de Plotly Express que muestra la barra de colores con las categorías principales y su estado de salud promedio.
+                """
+                if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Estado de Salud'). Asegúrese de cargar los datos correctamente.")
+                    return
+
+                # Agrupar por categoría y calcular el estado de salud promedio
+                df_mean = df_filtrado.groupby('Categoría')['Estado de Salud'].mean()
+
+                # Slider para el top de categorias
+                head = st.slider("Top de Categorías por Estado de Salud", 1, 50, 20)
+                st.write(head)
+
+                # Ordenar de forma descendente y seleccionar los principales
+                df_mean = df_mean.sort_values(ascending=False).head(head)
+
+                # Crear la barra de colores con Plotly Express
+                fig = px.bar(df_mean,
+                            x=df_mean.index,
+                            y=df_mean.values,
+                            title=f'Top {head} Categorías por Estado de Salud Promedio (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                            color=df_mean.values,  # Usar los valores de visitas para el color
+                            color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
+
+                # Personalizar el diseño (opcional)
+                fig.update_layout(
+                    xaxis_title="Categorías",
+                    yaxis_title="Estado de Salud Promedio",
+                    xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
+                )
+
+                # Mostrar la figura en Streamlit
+                st.plotly_chart(fig)
+
+
+            st.subheader("Gráfica de Estado de Salud por Categorías")
+            estado_salud_categorias(df_filtrado) # Llamar a la función estado_salud_categorias
+
+            def analizar_disponibilidad_categorias(df_filtrado):
+                """
+                Analiza la cantidad disponible por categoría y calcula el promedio.
+
+                Args:
+                    df_filtrado: DataFrame filtrado que contiene las columnas 'Categoría' y 'Cantidad Disponible'.
+
+                Returns:
+                    None: Muestra el gráfico directamente en Streamlit.
+                """
+                if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Cantidad Disponible'). Asegúrese de cargar los datos correctamente.")
+                    return
+
+                # Calcular el promedio de cantidad disponible por categoría
+                df_promedio = df_filtrado.groupby('Categoría')['Cantidad Disponible'].mean().reset_index()
+                df_promedio = df_promedio.rename(columns={'Cantidad Disponible': 'Promedio Disponible'})
+
+                # Slider para el top de categorias
+                head = st.slider("Top de Categorías por Cantidad Disponible", 1, 50, 20)
+                st.write(head)
+
+                # Ordenar y seleccionar el top
+                df_promedio = df_promedio.sort_values(by='Promedio Disponible', ascending=False).head(head)
+
+                # Crear el gráfico de barras
+                fig = px.bar(df_promedio,
+                            x='Categoría',
+                            y='Promedio Disponible',
+                            title=f'Top {head} Promedio de Cantidades Disponibles por Categoría (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                            color='Promedio Disponible',
+                            color_continuous_scale=px.colors.sequential.Viridis)
+
+                # Personalizar el diseño
+                fig.update_layout(
+                    xaxis_title="Categoría",
+                    yaxis_title="Cantidad Disponible Promedio",
+                    xaxis={'categoryorder': 'total descending'}
+                )
+
+                # Mostrar el gráfico en Streamlit
+                st.plotly_chart(fig)
+
+            def oem_efficiency(df_filtrado):
+                """
+                Calculates and displays the OEM efficiency (Visits / Count of OEM)
+
+                Args:
+                    df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
+                """
+                if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
+                    return
+
+                oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
+                visits_column = df_filtrado['Visitas']
+
+                # Create a DataFrame for easier processing
+                df_oem = pd.DataFrame({'OEM': oem_column, 'Visitas': visits_column})
+
+                # Group by OEM and sum the visits
+                oem_visits = df_oem.groupby('OEM')['Visitas'].sum()
+
+                # Calculate the *number* of times each OEM appears in the data.  This is the change!
+                oem_counts = df_oem['OEM'].value_counts()  #Count each OEM
+
+                # Calculate the efficiency for each OEM: visits / count
+                oem_efficiency = oem_visits / oem_counts
+
+                # Slider for the top of OEMs
+                top_n = st.slider("Top N OEMs", 1, 50, 20)
+                st.write(top_n)
+
+                # Sort by efficiency and get the top N
+                top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n)
+
+                # Create the bar chart with Plotly Express
+                fig = px.bar(
+                    x=top_oem_efficiency.index,
+                    y=top_oem_efficiency.values,
+                    title=f'Top {top_n} Eficiencia de cada OEM (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                    labels={'x': 'OEM', 'y': 'Eficiencia (Visitas / Count of OEM)'},
+                    color=top_oem_efficiency.values,
+                    color_continuous_scale=px.colors.sequential.Viridis
+                )
+
+                fig.update_layout(
+                    xaxis_title="OEM",
+                    yaxis_title="Eficiencia",
+                    xaxis={'categoryorder': 'total descending'}
+                )
+
+                st.plotly_chart(fig)
+
+            def categoria_efficiency(df_filtrado):
+                """
+                Calculates and displays the Category efficiency (Visits / Count of Category)
+
+                Args:
+                    df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
+                """
+                if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
+                    st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas'). Asegúrese de cargar los datos correctamente.")
+                    return
+
+                categoría_column = df_filtrado['Categoría']
+                visits_column = df_filtrado['Visitas']
+
+                # Create a DataFrame for easier processing
+                df_cat = pd.DataFrame({'Categoría': categoría_column, 'Visitas': visits_column})
+
+                # Group by category and sum the visits
+                cat_visits = df_cat.groupby('Categoría')['Visitas'].sum()
+
+                # Calculate the *number* of times each category appears in the data
+                cat_counts = df_cat['Categoría'].value_counts()
+
+                # Calculate the efficiency for each category: visits / count
+                cat_efficiency = cat_visits / cat_counts
+
+                # Slider for the top of Categories
+                top_n = st.slider("Top N Categorías", 1, 50, 20)
+                st.write(top_n)
+
+                # Sort by efficiency and get the top N
+                top_cat_efficiency = cat_efficiency.sort_values(ascending=False).head(top_n)
+
+                # Create the bar chart with Plotly Express
+                fig = px.bar(
+                    x=top_cat_efficiency.index,
+                    y=top_cat_efficiency.values,
+                    title=f'Top {top_n} Eficiencia de cada Categoría (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
+                    labels={'x': 'Categoría', 'y': 'Eficiencia (Visitas / Count of Categoría)'},
+                    color=top_cat_efficiency.values,
+                    color_continuous_scale=px.colors.sequential.Viridis
+                )
+
+                fig.update_layout(
+                    xaxis_title="Categoría",
+                    yaxis_title="Eficiencia",
+                    xaxis={'categoryorder': 'total descending'}
+                )
+
+                st.plotly_chart(fig)
+
+
+            st.subheader("Eficiencia por OEM")
+            oem_efficiency(df_filtrado)
+
+            st.subheader("Eficiencia por Categoría")
+            categoria_efficiency(df_filtrado)
+
+
+            st.subheader("Gráfica de Cantidades Disponibles por Categorías")
+            analizar_disponibilidad_categorias(df_filtrado)
+
+            # --- DataFrame Resumen ---
+            st.subheader("DataFrame Resumen")
+
+            # Crear un DataFrame resumen (puedes personalizarlo)
+            resumen_data = {
+                'Total Visitas': df_filtrado['Visitas'].sum(),
+                'Promedio Estado de Salud': df_filtrado['Estado de Salud'].mean(),
+                'Promedio Cantidad Disponible': df_filtrado['Cantidad Disponible'].mean()
+            }
+            df_resumen = pd.DataFrame(resumen_data, index=['Resumen'])
+
+            st.dataframe(df_resumen)
+
+            # --- Descargar DataFrame a CSV ---
+            csv = df_resumen.to_csv(index=False)
+            b64 = base64.b64encode(csv.encode()).decode()  # Encode para descarga
+            href = f'<a href="data:file/csv;base64,{b64}" download="resumen.csv">Descargar DataFrame Resumen como CSV</a>'
+            st.markdown(href, unsafe_allow_html=True)
+
+            return df_filtrado # Retornar el DataFrame filtrado    
+
+
+    def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
+        st.header("Estrategia Actual")
+
+        # Verifica si df_filtrado está vacío antes de continuar
+        if df_filtrado is None or df_filtrado.empty:
             st.warning("No hay datos en el rango de fechas seleccionado.")
-            # Evitar errores retornando un DataFrame vacío
-            df_para_descarga = pd.DataFrame()
-            return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
+            return
 
-        # DataFrame para la descarga
-        df_para_descarga = pd.DataFrame()  # Initialize an empty DataFrame
+        lista_vendedores = df_filtrado['Vendedores'].unique()
+        vendedores = st.selectbox('Seleccione un Vendedor', lista_vendedores)
 
-        def vendedores_visitas(df_filtrado): # Recibe el DataFrame filtrado como argumento
-            """
-            Crea una barra de colores interactiva con los vendedores principales por número de visitas,
-            filtrando por un rango de fechas.
+        # --- Visitas por Título ---
+        st.subheader(f"Grafica de Visitas por Título para {vendedores}")
 
-            Args:
-                df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Vendedores', 'Visitas' y 'Fecha'.
-
-            Returns:
-                Una figura de Plotly Express que muestra la barra de colores con los vendedores principales.
-            """
-
-            nonlocal df_para_descarga  # Declare it nonlocal so we can modify it
-
-            if df_filtrado is None or 'Vendedores' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('Vendedores', 'Visitas').  Asegúrese de cargar los datos correctamente.")
+        def visitas_titulos_vendedores(df_filtrado, vendedores):
+            """Muestra la gráfica de visitas por título para un vendedor específico."""
+            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-
-            # Agrupar por vendedor y sumar las visitas
-            df_sum = df_filtrado.groupby('Vendedores')['Visitas'].sum().reset_index() # Add reset_index()
-
-            # Slider para el top de vendedores
-            head = st.slider("Top de vendedores", 1, 50, 20)
-            st.write(head)
-
-            # Ordenar de forma descendente y seleccionar los principales
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            df_sum = df_vendedor.groupby('Título')['Visitas'].sum().reset_index()
+            head = st.slider('Top Títulos por Visitas', 1, 50, 20, key="titulos_visitas")  # key para evitar conflicto de sliders
             df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
 
-            # Crear la barra de colores con Plotly Express
-            fig = px.bar(df_sum,
-                        x='Vendedores',
-                        y='Visitas',
-                        title=f'Top {head} Vendedores por Número de Visitas (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                        color='Visitas',  # Usar los valores de visitas para el color
-                        color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
-
-            # Personalizar el diseño (opcional)
-            fig.update_layout(
-                xaxis_title="Vendedor",
-                yaxis_title="Número de Visitas",
-                xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
-            )
-
-            # Mostrar la figura
+            fig = px.bar(df_sum, x='Título', y='Visitas',
+                        title=f'Top {head} Títulos por Visitas para {vendedores}',
+                        labels={'Título': 'Título', 'Visitas': 'Visitas'},
+                        color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
+            fig.update_layout(xaxis_title='Título', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Actualizar el DataFrame para descarga
-            df_para_descarga = df_sum.copy()  # Capture current df_sum result
+        visitas_titulos_vendedores(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(df_sum)
+        # --- Visitas por OEM ---
+        st.subheader(f"Gráfica de Visitas por OEM para {vendedores}")
 
-
-        # Llamar a la función de visualización
-        vendedores_visitas(df_filtrado)
-
-        #Grafica de Visitas x Categoría
-
-        def vendedores_vistas(df_filtrado):
-            """
-            Crea una barra de colores interactiva con las categorías principales por número de visitas,
-            filtrando por un rango de fechas.
-
-            Args:
-                df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Visitas'.
-
-            Returns:
-                Una figura de Plotly Express que muestra la barra de colores con las categorías principales.
-            """
-            nonlocal df_para_descarga  # Declare it nonlocal
-
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas').  Asegúrese de cargar los datos correctamente.")
+        def visitas_oem_vendedores(df_filtrado, vendedores):
+            """Muestra la gráfica de visitas por OEM para un vendedor específico."""
+            if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-            # Agrupar por categoría y sumar las visitas
-            df_sum = df_filtrado.groupby('Categoría')['Visitas'].sum().reset_index()  # Add reset_index()
-
-            head = st.slider("Top de Categorías", 1, 50, 20)
-            st.write(head)
-
-            # Ordenar de forma descendente y seleccionar los principales
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            df_sum = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index()
+            head = st.slider('Top OEMs por Visitas', 1, 50, 20, key="oem_visitas")  # key para evitar conflicto de sliders
             df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
 
-            # Crear la barra de colores con Plotly Express
-            fig = px.bar(df_sum,
-                        x='Categoría',
-                        y='Visitas',
-                        title=f'Top {head} Categorías por Número de Visitas (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                        color='Visitas',  # Usar los valores de visitas para el color
-                        color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
-
-            # Personalizar el diseño (opcional)
-            fig.update_layout(
-                xaxis_title="Categoría",
-                yaxis_title="Número de Visitas",
-                xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
-            )
-
-            # Mostrar la figura
+            fig = px.bar(df_sum, x='OEM', y='Visitas',
+                        title=f'Top {head} OEMs por Visitas para {vendedores}',
+                        labels={'OEM': 'OEM', 'Visitas': 'Visitas'},
+                        color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
+            fig.update_layout(xaxis_title='OEM', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Update DataFrame for download (append this result)
-            df_para_descarga = pd.concat([df_para_descarga, df_sum], ignore_index=True)
+        visitas_oem_vendedores(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(df_sum)
+        # --- Cantidad de Publicaciones por Categoría ---
+        st.subheader(f"Gráfica de Cantidad de Publicaciones por Categoría para {vendedores}")
 
-
-        vendedores_vistas(df_filtrado)
-
-        def estado_salud_categorias(df_filtrado):
-            """
-            Crea una barra de colores interactiva con las categorías principales por el estado de salud promedio.
-
-            Args:
-                df_filtrado: El DataFrame de Pandas ya filtrado por fechas que contiene los datos, incluyendo las columnas 'Categoría', 'Estado de Salud'.
-
-            Returns:
-                Una figura de Plotly Express que muestra la barra de colores con las categorías principales y su estado de salud promedio.
-            """
-            nonlocal df_para_descarga  # Declare it nonlocal
-
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Estado de Salud'). Asegúrese de cargar los datos correctamente.")
+        def publicaciones_por_categoria(df_filtrado, vendedores):
+            """Muestra la cantidad de publicaciones por categoría para un vendedor."""
+            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'Categoría' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-            # Agrupar por categoría y calcular el estado de salud promedio
-            df_mean = df_filtrado.groupby('Categoría')['Estado de Salud'].mean().reset_index()  # Add reset_index()
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            df_count = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad') # Usamos size() para contar
+            head = st.slider('Top Categorías por Publicaciones', 1, 50, 20, key="cat_publicaciones")  # key para evitar conflicto de sliders
+            df_count = df_count.sort_values(by='Cantidad', ascending=False).head(head)
 
-            # Slider para el top de categorias
-            head = st.slider("Top de Categorías por Estado de Salud", 1, 50, 20)
-            st.write(head)
-
-            # Ordenar de forma descendente y seleccionar los principales
-            df_mean = df_mean.sort_values(by='Estado de Salud', ascending=False).head(head)
-
-            # Crear la barra de colores con Plotly Express
-            fig = px.bar(df_mean,
-                        x='Categoría',
-                        y='Estado de Salud',
-                        title=f'Top {head} Categorías por Estado de Salud Promedio (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                        color='Estado de Salud',  # Usar los valores de visitas para el color
-                        color_continuous_scale=px.colors.sequential.Plasma)  # Elegir una paleta de colores.  Plasma es una buena opción.
-
-            # Personalizar el diseño (opcional)
-            fig.update_layout(
-                xaxis_title="Categorías",
-                yaxis_title="Estado de Salud Promedio",
-                xaxis={'categoryorder': 'total descending'}  # Ordenar las barras por valor descendente
-            )
-
-            # Mostrar la figura en Streamlit
+            fig = px.bar(df_count, x='Categoría', y='Cantidad',
+                        title=f'Top {head} Categorías por Cantidad de Publicaciones para {vendedores}',
+                        labels={'Categoría': 'Categoría', 'Cantidad': 'Cantidad de Publicaciones'},
+                        color='Cantidad', color_continuous_scale=px.colors.sequential.Plasma)
+            fig.update_layout(xaxis_title='Categoría', yaxis_title='Cantidad de Publicaciones', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Update DataFrame for download (append this result)
-            df_para_descarga = pd.concat([df_para_descarga, df_mean], ignore_index=True)
+        publicaciones_por_categoria(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(df_mean)
+        # --- Cantidades Disponibles por Título ---
+        st.subheader(f"Gráfica de Cantidades Disponibles por Título para {vendedores}")
 
-        st.subheader("Gráfica de Estado de Salud por Categorías")
-        estado_salud_categorias(df_filtrado) # Llamar a la función estado_salud_categorias
-
-        def analizar_disponibilidad_categorias(df_filtrado):
-            """
-            Analiza la cantidad disponible por categoría y calcula el promedio.
-
-            Args:
-                df_filtrado: DataFrame filtrado que contiene las columnas 'Categoría' y 'Cantidad Disponible'.
-
-            Returns:
-                None: Muestra el gráfico directamente en Streamlit.
-            """
-            nonlocal df_para_descarga  # Declare it nonlocal
-
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Cantidad Disponible'). Asegúrese de cargar los datos correctamente.")
+        def cantidades_disponibles_por_titulo(df_filtrado, vendedores):
+            """Muestra la cantidad disponible por título para un vendedor."""
+            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'Título', 'Cantidad Disponible' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-            # Calcular el promedio de cantidad disponible por categoría
-            df_promedio = df_filtrado.groupby('Categoría')['Cantidad Disponible'].mean().reset_index() # Add reset_index()
-            df_promedio = df_promedio.rename(columns={'Cantidad Disponible': 'Promedio Disponible'})
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            df_sum = df_vendedor.groupby('Título')['Cantidad Disponible'].sum().reset_index()
+            head = st.slider('Top Títulos por Cantidad Disponible', 1, 50, 20, key="titulo_cantidad")  # key para evitar conflicto de sliders
+            df_sum = df_sum.sort_values(by='Cantidad Disponible', ascending=False).head(head)
 
-            # Slider para el top de categorias
-            head = st.slider("Top de Categorías por Cantidad Disponible", 1, 50, 20)
-            st.write(head)
-
-            # Ordenar y seleccionar el top
-            df_promedio = df_promedio.sort_values(by='Promedio Disponible', ascending=False).head(head)
-
-            # Crear el gráfico de barras
-            fig = px.bar(df_promedio,
-                        x='Categoría',
-                        y='Promedio Disponible',
-                        title=f'Top {head} Promedio de Cantidades Disponibles por Categoría (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                        color='Promedio Disponible',
-                        color_continuous_scale=px.colors.sequential.Viridis)
-
-            # Personalizar el diseño
-            fig.update_layout(
-                xaxis_title="Categoría",
-                yaxis_title="Cantidad Disponible Promedio",
-                xaxis={'categoryorder': 'total descending'}
-            )
-
-            # Mostrar el gráfico en Streamlit
+            fig = px.bar(df_sum, x='Título', y='Cantidad Disponible',
+                        title=f'Top {head} Títulos por Cantidad Disponible para {vendedores}',
+                        labels={'Título': 'Título', 'Cantidad Disponible': 'Cantidad Disponible'},
+                        color='Cantidad Disponible', color_continuous_scale=px.colors.sequential.Plasma)
+            fig.update_layout(xaxis_title='Título', yaxis_title='Cantidad Disponible', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Update DataFrame for download (append this result)
-            df_para_descarga = pd.concat([df_para_descarga, df_promedio], ignore_index=True)
+        cantidades_disponibles_por_titulo(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(df_promedio)
+        # --- Eficiencia en el Mercado (OEM) ---
+        st.subheader(f"Eficiencia en el Mercado (OEM) para {vendedores}")
 
-        def oem_efficiency(df_filtrado):
-            """
-            Calculates and displays the OEM efficiency (Visits / Count of OEM)
-
-            Args:
-                df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
-            """
-            nonlocal df_para_descarga  # Declare it nonlocal
-
-            if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
+        def eficiencia_mercado_oem(df, vendedores):
+            """Calcula y muestra la eficiencia en el mercado (OEM) para un vendedor."""
+            if df is None or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Vendedores' not in df.columns:
+                st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-            oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
-            visits_column = df_filtrado['Visitas']
+            # Total de visitas de los OEM del vendedor
+            df_vendedor = df[df['Vendedores'] == vendedores]
+            visitas_vendedor = df_vendedor.groupby('OEM')['Visitas'].sum()
 
-            # Create a DataFrame for easier processing
-            df_oem = pd.DataFrame({'OEM': oem_column, 'Visitas': visits_column})
+            # Total de visitas de esos mismos OEM de todos los vendedores
+            visitas_totales = df.groupby('OEM')['Visitas'].sum()
 
-            # Group by OEM and sum the visits
-            oem_visits = df_oem.groupby('OEM')['Visitas'].sum()
+            # Calcular la eficiencia
+            eficiencia = (visitas_vendedor / visitas_totales).fillna(0)  # Manejar divisiones por cero
 
-            # Calculate the *number* of times each OEM appears in the data.  This is the change!
-            oem_counts = df_oem['OEM'].value_counts()  #Count each OEM
+            # Crear DataFrame para la gráfica
+            df_eficiencia = eficiencia.reset_index(name='Eficiencia')
+            df_eficiencia = df_eficiencia.sort_values(by='Eficiencia', ascending=False)
+            head = st.slider('Top OEMs por Eficiencia', 1, 50, 20, key="oem_eficiencia")  # key para evitar conflicto de sliders
+            df_eficiencia = df_eficiencia.head(head)
 
-            # Calculate the efficiency for each OEM: visits / count
-            oem_efficiency = oem_visits / oem_counts
-
-            # Slider for the top of OEMs
-            top_n = st.slider("Top N OEMs", 1, 50, 20)
-            st.write(top_n)
-
-            # Sort by efficiency and get the top N
-            top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n).reset_index()  # Add reset_index()
-            top_oem_efficiency.rename(columns={0: 'OEM Efficiency'}, inplace=True) #Rename columns in case reset index introduces some
-
-            # Create the bar chart with Plotly Express
-            fig = px.bar(
-                x=top_oem_efficiency['OEM'], # X axis must be passed in this way
-                y='OEM Efficiency',  # Y axis value name
-                title=f'Top {top_n} Eficiencia de cada OEM (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                labels={'x': 'OEM', 'y': 'Eficiencia (Visitas / Count of OEM)'},
-                color='OEM Efficiency',
-                color_continuous_scale=px.colors.sequential.Viridis
-            )
-
-            fig.update_layout(
-                xaxis_title="OEM",
-                yaxis_title="Eficiencia",
-                xaxis={'categoryorder': 'total descending'}
-            )
-
+            # Crear la gráfica
+            fig = px.bar(df_eficiencia, x='OEM', y='Eficiencia',
+                        title=f'Top {head} Eficiencia en el Mercado (OEM) para {vendedores}',
+                        labels={'OEM': 'OEM', 'Eficiencia': 'Eficiencia'},
+                        color='Eficiencia', color_continuous_scale=px.colors.sequential.Plasma)
+            fig.update_layout(xaxis_title='OEM', yaxis_title='Eficiencia', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Update DataFrame for download (append this result)
-            df_para_descarga = pd.concat([df_para_descarga, top_oem_efficiency], ignore_index=True)
+        eficiencia_mercado_oem(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(top_oem_efficiency)
+        # --- Health Medio por Categoría ---
+        st.subheader(f"Health Medio por Categoría para {vendedores}")
 
-        def categoria_efficiency(df_filtrado):
-            """
-            Calculates and displays the Category efficiency (Visits / Count of Category)
-
-            Args:
-                df_filtrado (pd.DataFrame): DataFrame containing 'Categoría' and 'Visitas' columns.
-            """
-            nonlocal df_para_descarga  # Declare it nonlocal
-
-            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns:
-                st.warning("El DataFrame no tiene las columnas necesarias ('Categoría', 'Visitas'). Asegúrese de cargar los datos correctamente.")
+        def health_medio_por_categoria(df_filtrado, vendedores):
+            """Calcula y muestra el health medio por categoría para un vendedor."""
+            if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'Categoría', 'Estado de Salud' y 'Vendedores' deben estar presentes en el DataFrame.")
                 return
 
-            categoría_column = df_filtrado['Categoría']
-            visits_column = df_filtrado['Visitas']
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            health_medio = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index()
+            health_medio = health_medio.sort_values(by='Estado de Salud', ascending=False)
 
-            # Create a DataFrame for easier processing
-            df_cat = pd.DataFrame({'Categoría': categoría_column, 'Visitas': visits_column})
+            head = st.slider('Top Categorías por Health Medio', 1, 50, 20, key="health_medio")  # key para evitar conflicto de sliders
+            health_medio = health_medio.head(head)
 
-            # Group by category and sum the visits
-            cat_visits = df_cat.groupby('Categoría')['Visitas'].sum()
+            fig = px.bar(health_medio, x='Categoría', y='Estado de Salud',
+                        title=f'Top {head} Health Medio por Categoría para {vendedores}',
+                        labels={'Categoría': 'Categoría', 'Estado de Salud': 'Health Medio'},
+                        color='Estado de Salud', color_continuous_scale=px.colors.sequential.Plasma)
 
-            # Calculate the *number* of times each category appears in the data
-            cat_counts = df_cat['Categoría'].value_counts()
-
-            # Calculate the efficiency for each category: visits / count
-            cat_efficiency = cat_visits / cat_counts
-
-            # Slider for the top of Categories
-            top_n = st.slider("Top N Categorías", 1, 50, 20)
-            st.write(top_n)
-
-            # Sort by efficiency and get the top N
-            top_cat_efficiency = cat_efficiency.sort_values(ascending=False).head(top_n).reset_index()  # Add reset_index()
-            top_cat_efficiency.rename(columns={0: 'Category Efficiency'}, inplace=True)  # Correct name
-            top_cat_efficiency.rename(columns={'Categoría': 'Categoría'}, inplace=True)  # Ensure columns are renamed
-
-
-            # Create the bar chart with Plotly Express
-            fig = px.bar(
-                x=top_cat_efficiency['index'],
-                y='Category Efficiency',
-                title=f'Top {top_n} Eficiencia de cada Categoría (entre {fecha_inicio.strftime("%Y-%m-%d")} y {fecha_fin.strftime("%Y-%m-%d")})',
-                labels={'x': 'Categoría', 'y': 'Eficiencia (Visitas / Count of Categoría)'},
-                color='Category Efficiency',
-                color_continuous_scale=px.colors.sequential.Viridis
-            )
-
-            fig.update_layout(
-                xaxis_title="Categoría",
-                yaxis_title="Eficiencia",
-                xaxis={'categoryorder': 'total descending'}
-            )
-
+            fig.update_layout(xaxis_title='Categoría', yaxis_title='Health Medio', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
-            # Update DataFrame for download (append this result)
-            df_para_descarga = pd.concat([df_para_descarga, top_cat_efficiency], ignore_index=True)
+        health_medio_por_categoria(df_filtrado, vendedores)
 
-            # Display table
-            st.subheader("Tabla de datos")
-            st.dataframe(top_cat_efficiency)
+        # --- Eficiencia del Vendedor ---
+        st.subheader(f"Eficiencia del Vendedor ({vendedores})")
 
-        st.subheader("Eficiencia por OEM")
-        oem_efficiency(df_filtrado)
-
-        st.subheader("Eficiencia por Categoría")
-        categoria_efficiency(df_filtrado)
+        def eficiencia_del_vendedor(df_filtrado, vendedores):
+            """Calcula y muestra la eficiencia del vendedor (Total Visitas / Total Títulos)."""
+            if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
+                st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
+                return
 
-
-        st.subheader("Gráfica de Cantidades Disponibles por Categorías")
-        analizar_disponibilidad_categorias(df_filtrado)
-
-        # Eliminar duplicados del DataFrame para descarga
-        df_para_descarga = df_para_descarga.drop_duplicates()
+            df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
+            total_visitas = df_vendedor['Visitas'].sum()
+            total_titulos = df_vendedor['Título'].nunique()  # Usa nunique() para contar títulos únicos
 
-        # Botón de descarga CSV
-
-        # Use StringIO to create an in-memory text buffer
-        csv_buffer = StringIO()
-        df_para_descarga.to_csv(csv_buffer, index=False)
-        csv = csv_buffer.getvalue()
-
-        st.download_button(
-            label="Descargar datos del mercado como CSV",
-            data=csv,
-            file_name='datos_mercado.csv',
-            mime='text/csv',
-        )
-
-
-        return df_filtrado, df_para_descarga # Retornar el DataFrame filtrado y uno para descarga
-    
-    
-
-def estrategia_actual(df_filtrado):  # Recibe el DataFrame filtrado como argumento
-    st.header("Estrategia Actual")
-
-    # Verifica si df_filtrado está vacío antes de continuar
-    if df_filtrado is None or df_filtrado.empty:
-        st.warning("No hay datos en el rango de fechas seleccionado.")
-        return
-
-    lista_vendedores = df_filtrado['Vendedores'].unique()
-    vendedores = st.selectbox('Seleccione un Vendedor', lista_vendedores)
-
-    # --- Visitas por Título ---
-    st.subheader(f"Grafica de Visitas por Título para {vendedores}")
-
-    def visitas_titulos_vendedores(df_filtrado, vendedores):
-        """Muestra la gráfica de visitas por título para un vendedor específico."""
-        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        df_sum = df_vendedor.groupby('Título')['Visitas'].sum().reset_index()
-        head = st.slider('Top Títulos por Visitas', 1, 50, 20, key="titulos_visitas")  # key para evitar conflicto de sliders
-        df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
-
-        fig = px.bar(df_sum, x='Título', y='Visitas',
-                    title=f'Top {head} Títulos por Visitas para {vendedores}',
-                    labels={'Título': 'Título', 'Visitas': 'Visitas'},
-                    color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
-        fig.update_layout(xaxis_title='Título', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
-
-    visitas_titulos_vendedores(df_filtrado, vendedores)
-
-    # --- Visitas por OEM ---
-    st.subheader(f"Gráfica de Visitas por OEM para {vendedores}")
-
-    def visitas_oem_vendedores(df_filtrado, vendedores):
-        """Muestra la gráfica de visitas por OEM para un vendedor específico."""
-        if df_filtrado is None or 'OEM' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        df_sum = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index()
-        head = st.slider('Top OEMs por Visitas', 1, 50, 20, key="oem_visitas")  # key para evitar conflicto de sliders
-        df_sum = df_sum.sort_values(by='Visitas', ascending=False).head(head)
-
-        fig = px.bar(df_sum, x='OEM', y='Visitas',
-                    title=f'Top {head} OEMs por Visitas para {vendedores}',
-                    labels={'OEM': 'OEM', 'Visitas': 'Visitas'},
-                    color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
-        fig.update_layout(xaxis_title='OEM', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
-
-    visitas_oem_vendedores(df_filtrado, vendedores)
-
-    # --- Cantidad de Publicaciones por Categoría ---
-    st.subheader(f"Gráfica de Cantidad de Publicaciones por Categoría para {vendedores}")
-
-    def publicaciones_por_categoria(df_filtrado, vendedores):
-        """Muestra la cantidad de publicaciones por categoría para un vendedor."""
-        if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'Categoría' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        df_count = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad') # Usamos size() para contar
-        head = st.slider('Top Categorías por Publicaciones', 1, 50, 20, key="cat_publicaciones")  # key para evitar conflicto de sliders
-        df_count = df_count.sort_values(by='Cantidad', ascending=False).head(head)
-
-        fig = px.bar(df_count, x='Categoría', y='Cantidad',
-                    title=f'Top {head} Categorías por Cantidad de Publicaciones para {vendedores}',
-                    labels={'Categoría': 'Categoría', 'Cantidad': 'Cantidad de Publicaciones'},
-                    color='Cantidad', color_continuous_scale=px.colors.sequential.Plasma)
-        fig.update_layout(xaxis_title='Categoría', yaxis_title='Cantidad de Publicaciones', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
-
-    publicaciones_por_categoria(df_filtrado, vendedores)
-
-    # --- Cantidades Disponibles por Título ---
-    st.subheader(f"Gráfica de Cantidades Disponibles por Título para {vendedores}")
-
-    def cantidades_disponibles_por_titulo(df_filtrado, vendedores):
-        """Muestra la cantidad disponible por título para un vendedor."""
-        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Cantidad Disponible' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'Título', 'Cantidad Disponible' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        df_sum = df_vendedor.groupby('Título')['Cantidad Disponible'].sum().reset_index()
-        head = st.slider('Top Títulos por Cantidad Disponible', 1, 50, 20, key="titulo_cantidad")  # key para evitar conflicto de sliders
-        df_sum = df_sum.sort_values(by='Cantidad Disponible', ascending=False).head(head)
+            if total_titulos == 0:
+                st.warning("El vendedor no tiene títulos.")
+                return
 
-        fig = px.bar(df_sum, x='Título', y='Cantidad Disponible',
-                    title=f'Top {head} Títulos por Cantidad Disponible para {vendedores}',
-                    labels={'Título': 'Título', 'Cantidad Disponible': 'Cantidad Disponible'},
-                    color='Cantidad Disponible', color_continuous_scale=px.colors.sequential.Plasma)
-        fig.update_layout(xaxis_title='Título', yaxis_title='Cantidad Disponible', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
-
-    cantidades_disponibles_por_titulo(df_filtrado, vendedores)
-
-    # --- Eficiencia en el Mercado (OEM) ---
-    st.subheader(f"Eficiencia en el Mercado (OEM) para {vendedores}")
+            eficiencia = total_visitas / total_titulos
 
-    def eficiencia_mercado_oem(df, vendedores):
-        """Calcula y muestra la eficiencia en el mercado (OEM) para un vendedor."""
-        if df is None or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Vendedores' not in df.columns:
-            st.warning("Error: Las columnas 'OEM', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        # Total de visitas de los OEM del vendedor
-        df_vendedor = df[df['Vendedores'] == vendedores]
-        visitas_vendedor = df_vendedor.groupby('OEM')['Visitas'].sum()
-
-        # Total de visitas de esos mismos OEM de todos los vendedores
-        visitas_totales = df.groupby('OEM')['Visitas'].sum()
-
-        # Calcular la eficiencia
-        eficiencia = (visitas_vendedor / visitas_totales).fillna(0)  # Manejar divisiones por cero
-
-        # Crear DataFrame para la gráfica
-        df_eficiencia = eficiencia.reset_index(name='Eficiencia')
-        df_eficiencia = df_eficiencia.sort_values(by='Eficiencia', ascending=False)
-        head = st.slider('Top OEMs por Eficiencia', 1, 50, 20, key="oem_eficiencia")  # key para evitar conflicto de sliders
-        df_eficiencia = df_eficiencia.head(head)
-
-        # Crear la gráfica
-        fig = px.bar(df_eficiencia, x='OEM', y='Eficiencia',
-                    title=f'Top {head} Eficiencia en el Mercado (OEM) para {vendedores}',
-                    labels={'OEM': 'OEM', 'Eficiencia': 'Eficiencia'},
-                    color='Eficiencia', color_continuous_scale=px.colors.sequential.Plasma)
-        fig.update_layout(xaxis_title='OEM', yaxis_title='Eficiencia', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
+            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
 
-    eficiencia_mercado_oem(df_filtrado, vendedores)
+            # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
+            # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
 
-    # --- Health Medio por Categoría ---
-    st.subheader(f"Health Medio por Categoría para {vendedores}")
-
-    def health_medio_por_categoria(df_filtrado, vendedores):
-        """Calcula y muestra el health medio por categoría para un vendedor."""
-        if df_filtrado is None or 'Categoría' not in df_filtrado.columns or 'Estado de Salud' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'Categoría', 'Estado de Salud' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        health_medio = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index()
-        health_medio = health_medio.sort_values(by='Estado de Salud', ascending=False)
-
-        head = st.slider('Top Categorías por Health Medio', 1, 50, 20, key="health_medio")  # key para evitar conflicto de sliders
-        health_medio = health_medio.head(head)
-
-        fig = px.bar(health_medio, x='Categoría', y='Estado de Salud',
-                    title=f'Top {head} Health Medio por Categoría para {vendedores}',
-                    labels={'Categoría': 'Categoría', 'Estado de Salud': 'Health Medio'},
-                    color='Estado de Salud', color_continuous_scale=px.colors.sequential.Plasma)
-
-        fig.update_layout(xaxis_title='Categoría', yaxis_title='Health Medio', xaxis={'categoryorder': 'total descending'})
-        st.plotly_chart(fig)
-
-    health_medio_por_categoria(df_filtrado, vendedores)
-
-    # --- Eficiencia del Vendedor ---
-    st.subheader(f"Eficiencia del Vendedor ({vendedores})")
-
-    def eficiencia_del_vendedor(df_filtrado, vendedores):
-        """Calcula y muestra la eficiencia del vendedor (Total Visitas / Total Títulos)."""
-        if df_filtrado is None or 'Título' not in df_filtrado.columns or 'Visitas' not in df_filtrado.columns or 'Vendedores' not in df_filtrado.columns:
-            st.warning("Error: Las columnas 'Título', 'Visitas' y 'Vendedores' deben estar presentes en el DataFrame.")
-            return
-
-        df_vendedor = df_filtrado[df_filtrado['Vendedores'] == vendedores]
-        total_visitas = df_vendedor['Visitas'].sum()
-        total_titulos = df_vendedor['Título'].nunique()  # Usa nunique() para contar títulos únicos
-
-        if total_titulos == 0:
-            st.warning("El vendedor no tiene títulos.")
-            return
-
-        eficiencia = total_visitas / total_titulos
-
-        st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
-
-        # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
-        # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
-
-    eficiencia_del_vendedor(df_filtrado, vendedores)
-
-    # --- DataFrame con Información Combinada ---
-    st.subheader("DataFrame con Información Combinada")
-
-    def crear_dataframe_combinado(df, vendedores):
-        """Crea un DataFrame combinado con información relevante."""
-        if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
-            st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
-            return None
-
-        df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
-
-        # Calcular la cantidad de publicaciones por categoría
-        publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
-        df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
-
-        # Agrupar por 'OEM' y calcular la suma de visitas
-        oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
-        df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
-
-        # Calcular eficiencia del vendedor
-        total_visitas = df_vendedor['Visitas'].sum()
-        total_titulos = df_vendedor['Título'].nunique()
-        eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
-        df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
-
-        # Eliminar duplicados para que cada fila represente una combinación única
-        df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
-
-        # Calcular la eficiencia
-        visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
-        eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
-
-        df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
-
-        # Calcular Health promedio por categoria
-        health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
-        df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
-        df_resumen = df_resumen.fillna(0)
-
-        return df_resumen
-
-    df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
-
-    if df_combinado is not None:
-        st.dataframe(df_combinado)
-        # Opción de descarga (csv)
-        csv = df_combinado.to_csv(index=False)
-        st.download_button(
-            label="Descargar datos como CSV",
-            data=csv,
-            file_name='data_combinada.csv',
-            mime='text/csv',
-        )
+        eficiencia_del_vendedor(df_filtrado, vendedores)
+
+        # --- DataFrame con Información Combinada ---
+        st.subheader("DataFrame con Información Combinada")
+
+        def crear_dataframe_combinado(df, vendedores):
+            """Crea un DataFrame combinado con información relevante."""
+            if df is None or 'Categoría' not in df.columns or 'Título' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'Vendedores' not in df.columns or 'permalink' not in df.columns or 'ID' not in df.columns:
+                st.warning("Error: Faltan columnas necesarias en el DataFrame.  Asegúrate de tener 'Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Vendedores', 'permalink' y 'ID'.")
+                return None
+
+            df_vendedor = df[df['Vendedores'] == vendedores].copy() # Importante usar .copy() para evitar SettingWithCopyWarning
+
+            # Calcular la cantidad de publicaciones por categoría
+            publicaciones_por_categoria = df_vendedor.groupby('Categoría').size().reset_index(name='Cantidad Publicaciones')
+            df_vendedor = pd.merge(df_vendedor, publicaciones_por_categoria, on='Categoría', how='left')
+
+            # Agrupar por 'OEM' y calcular la suma de visitas
+            oem_visitas = df_vendedor.groupby('OEM')['Visitas'].sum().reset_index(name='Visitas por OEM')
+            df_vendedor = pd.merge(df_vendedor, oem_visitas, on='OEM', how='left')
+
+            # Calcular eficiencia del vendedor
+            total_visitas = df_vendedor['Visitas'].sum()
+            total_titulos = df_vendedor['Título'].nunique()
+            eficiencia_vendedor = total_visitas / total_titulos if total_titulos > 0 else 0
+            df_vendedor['Eficiencia Vendedor'] = eficiencia_vendedor  # Agregar al DataFrame
+
+            # Eliminar duplicados para que cada fila represente una combinación única
+            df_resumen = df_vendedor[['Categoría', 'Título', 'OEM', 'Visitas', 'Cantidad Disponible', 'Estado de Salud', 'Cantidad Publicaciones', 'Visitas por OEM', 'Eficiencia Vendedor', 'permalink', 'ID']].drop_duplicates()
+
+            # Calcular la eficiencia
+            visitas_totales = df.groupby('OEM')['Visitas'].sum() # Visitas totales por OEM de todos los vendedores
+            eficiencia_oem = (df_vendedor['Visitas por OEM'] / visitas_totales[df_vendedor['OEM']].values).fillna(0)  # Eficiencia para cada fila
+
+            df_resumen['Eficiencia OEM'] = eficiencia_oem # Agrega la eficiencia calculada
+
+            # Calcular Health promedio por categoria
+            health_medio_por_categoria = df_vendedor.groupby('Categoría')['Estado de Salud'].mean().reset_index(name = "Health Medio Categoria")
+            df_resumen = pd.merge(df_resumen, health_medio_por_categoria, on='Categoría', how='left')
+            df_resumen = df_resumen.fillna(0)
+
+            return df_resumen
+
+        df_combinado = crear_dataframe_combinado(df_filtrado, vendedores)
+
+        if df_combinado is not None:
+            st.dataframe(df_combinado)
+            # Opción de descarga (csv)
+            csv = df_combinado.to_csv(index=False)
+            st.download_button(
+                label="Descargar datos como CSV",
+                data=csv,
+                file_name='data_combinada.csv',
+                mime='text/csv',
+            )
 
 
         
