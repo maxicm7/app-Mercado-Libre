@@ -80,6 +80,7 @@ def main():
 
             # Filtro de fecha aplicado a todo el analisis de mercado
             df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
+            df_filtrado['OEM]=df_filtrado['OEM'].astype(str)
 
             if df_filtrado.empty:
                 st.warning("No hay datos en el rango de fechas seleccionado.")
