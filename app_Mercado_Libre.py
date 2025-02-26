@@ -610,7 +610,7 @@ def main():
 
             eficiencia = total_visitas / total_titulos
 
-                            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
+            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
 
             # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
             # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
