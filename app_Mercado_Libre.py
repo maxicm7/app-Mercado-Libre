@@ -874,7 +874,7 @@ def main():
         
         
 
-    def estrategia_futura(df, fecha_inicio, fecha_fin):
+        def estrategia_futura(df, fecha_inicio, fecha_fin):
         st.header("Estrategia Futura")
     
         # 0) Estandarizar nombres de columnas (al inicio)
@@ -894,6 +894,15 @@ def main():
                 st.write("Datos de nuevos competidores cargados:")
                 st.dataframe(df_competidores_nuevos.head())
     
+                # Verifica si el DataFrame está vacío
+                if df_competidores_nuevos.empty:
+                    st.error("El archivo de competidores está vacío o no se pudo cargar correctamente.")
+                    return
+    
+                # Imprime los nombres de las columnas para verificar
+                st.write("Columnas en el DataFrame original:", df.columns)
+                st.write("Columnas en el DataFrame de competidores:", df_competidores_nuevos.columns)
+    
                 #Estandarizar columnas ANTES de concatenar
                 estandarizar_nombre_columna(df, 'OEM', 'OEM')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'OEM', 'OEM')
@@ -904,9 +913,15 @@ def main():
                 estandarizar_nombre_columna(df, 'Fecha', 'Fecha')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'Fecha', 'Fecha')
     
-                # Convertir a string, quitar espacios y manejar nulos ANTES de concatenar
-                df['OEM'] = df['OEM'].astype(str).str.strip().str.lower().fillna('')
-                df_competidores_nuevos['OEM'] = df_competidores_nuevos['OEM'].astype(str).str.strip().str.lower().fillna('')
+    
+                # Verifica si 'ID' está en las columnas
+                if 'ID' not in df.columns:
+                    st.error("La columna 'ID' no existe en el DataFrame original.")
+                    return
+                if 'ID' not in df_competidores_nuevos.columns:
+                    st.error("La columna 'ID' no existe en el DataFrame de competidores.")
+                    return
+    
     
                 # Diagnostic prints:
                 st.write("Original DataFrame ID dtype:", df['ID'].dtype)
@@ -924,7 +939,6 @@ def main():
                     st.error(f"La columna ID no existe en uno de los dataframes: {e}")
                     return
     
-    
                 # Merge with Existing Data using concat:
                 try:
                     df = pd.concat([df, df_competidores_nuevos], ignore_index=True)
@@ -933,9 +947,6 @@ def main():
                     return #Avoid the following code
                 st.write("DataFrame after CONCAT")
                 st.dataframe(df.head())
-    
-                # Imprimir valores únicos de OEM DESPUÉS de concatenar
-                st.write("Valores únicos de OEM en el DataFrame combinado:", df['OEM'].unique())
     
     
             except Exception as e:
@@ -953,16 +964,8 @@ def main():
         lista_oem = df_filtrado['OEM'].unique()
         oem_seleccionado = st.selectbox('Seleccione un OEM', lista_oem)
     
-        # Imprimir el valor seleccionado de OEM
-        st.write("OEM seleccionado:", oem_seleccionado)
-    
         # Filter for the selected OEM
         df_oem = df_filtrado[df_filtrado['OEM'] == oem_seleccionado]
-    
-        # 5) Imprimir un mensaje si el DataFrame está vacío
-        if df_oem.empty:
-            st.warning(f"No se encontraron datos para el OEM seleccionado: '{oem_seleccionado}'.  Verifique que el nombre del OEM sea correcto y que exista en el rango de fechas seleccionado.")
-            return
     
         #  Functions from Competencia - ALL INTEGRATED into estrategia_futura:
     
