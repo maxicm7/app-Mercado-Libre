@@ -907,7 +907,7 @@ def main():
 
                 # Merge with Existing Data using concat:
                 try:
-                    df = pd.concat([df_filtrado, df_competidores_nuevos], ignore_index=True)
+                    df = pd.concat([df, df_competidores_nuevos], ignore_index=True)
                 except Exception as e:
                     st.error(f"Error during concat: {e}")
                     return #Avoid the following code
