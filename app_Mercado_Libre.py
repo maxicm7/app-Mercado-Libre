@@ -247,7 +247,8 @@ def main():
                     st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
 
-                oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
+                oem_column = df_filtrado['OEM'].astype(str)  # Utiliza 'description' para OEM
+        
                 visits_column = df_filtrado['Visitas']
 
                 # Create a DataFrame for easier processing
