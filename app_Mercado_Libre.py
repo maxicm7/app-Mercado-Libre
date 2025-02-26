@@ -1129,16 +1129,16 @@ def main():
         
         # Filtro de fecha global
         if data is not None and 'Fecha' in data.columns:
-        fecha_minima = data['Fecha'].min()
-        fecha_maxima = data['Fecha'].max()
-        fecha_inicio = st.date_input("Fecha de inicio", value=fecha_minima)
-        fecha_fin = st.date_input("Fecha de fin", value=fecha_maxima)
+            fecha_minima = data['Fecha'].min()
+            fecha_maxima = data['Fecha'].max()
+            fecha_inicio = st.date_input("Fecha de inicio", value=fecha_minima)
+            fecha_fin = st.date_input("Fecha de fin", value=fecha_maxima)
         
-        fecha_inicio = pd.to_datetime(fecha_inicio)
-        fecha_fin = pd.to_datetime(fecha_fin)
+            fecha_inicio = pd.to_datetime(fecha_inicio)
+            fecha_fin = pd.to_datetime(fecha_fin)
         else:
-        fecha_inicio = None
-        fecha_fin = None
+            fecha_inicio = None
+            fecha_fin = None
         if data is None:
             st.warning("Por favor, cargue los datos en la página principal.")
         else:
