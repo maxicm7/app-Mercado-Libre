@@ -888,6 +888,9 @@ def main():
     
         carga_archivo_competidores = st.file_uploader("Cargue el archivo de competidores por favor (Excel)", type=['xlsx'])
     
+        # 3) Filtro de Fecha (se aplica AHORA al dataframe original)
+        df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)].copy() # Importante el .copy()
+    
         if carga_archivo_competidores is not None:
             try:
                 df_competidores_nuevos = pd.read_excel(carga_archivo_competidores)
@@ -900,28 +903,28 @@ def main():
                     return
     
                 # Imprime los nombres de las columnas para verificar
-                st.write("Columnas en el DataFrame original:", df.columns)
+                st.write("Columnas en el DataFrame filtrado:", df_filtrado.columns)
                 st.write("Columnas en el DataFrame de competidores:", df_competidores_nuevos.columns)
     
                 #Estandarizar columnas ANTES de concatenar
-                estandarizar_nombre_columna(df, 'OEM', 'OEM')
+                estandarizar_nombre_columna(df_filtrado, 'OEM', 'OEM')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'OEM', 'OEM')
-                estandarizar_nombre_columna(df, 'Vendedores', 'Vendedores')
+                estandarizar_nombre_columna(df_filtrado, 'Vendedores', 'Vendedores')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'Vendedores', 'Vendedores')
-                estandarizar_nombre_columna(df, 'ID', 'ID')
+                estandarizar_nombre_columna(df_filtrado, 'ID', 'ID')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'ID', 'ID')
-                estandarizar_nombre_columna(df, 'Fecha', 'Fecha')
+                estandarizar_nombre_columna(df_filtrado, 'Fecha', 'Fecha')
                 estandarizar_nombre_columna(df_competidores_nuevos, 'Fecha', 'Fecha')
     
                 # Convertir a string, quitar espacios y manejar nulos ANTES de concatenar
-                df['OEM'] = df['OEM'].astype(str).str.strip().str.lower().fillna('')
+                df_filtrado['OEM'] = df_filtrado['OEM'].astype(str).str.strip().str.lower().fillna('')
                 df_competidores_nuevos['OEM'] = df_competidores_nuevos['OEM'].astype(str).str.strip().str.lower().fillna('')
-                df['Vendedores'] = df['Vendedores'].astype(str).str.strip().str.lower().fillna('')
+                df_filtrado['Vendedores'] = df_filtrado['Vendedores'].astype(str).str.strip().str.lower().fillna('')
                 df_competidores_nuevos['Vendedores'] = df_competidores_nuevos['Vendedores'].astype(str).str.strip().str.lower().fillna('')
     
                 # Verifica si 'ID' está en las columnas
-                if 'ID' not in df.columns:
-                    st.error("La columna 'ID' no existe en el DataFrame original.")
+                if 'ID' not in df_filtrado.columns:
+                    st.error("La columna 'ID' no existe en el DataFrame filtrado.")
                     return
                 if 'ID' not in df_competidores_nuevos.columns:
                     st.error("La columna 'ID' no existe en el DataFrame de competidores.")
@@ -929,16 +932,16 @@ def main():
     
     
                 # Diagnostic prints:
-                st.write("Original DataFrame ID dtype:", df['ID'].dtype)
+                st.write("Filtrado DataFrame ID dtype:", df_filtrado['ID'].dtype)
                 st.write("Competitor DataFrame ID dtype:", df_competidores_nuevos['ID'].dtype)
     
                 # **Key Conversion and Handling of Data Types**: Prioritize numeric handling
                 try:
-                    df['ID'] = pd.to_numeric(df['ID'], errors='raise') #Raise the error instead of coerse it
+                    df_filtrado['ID'] = pd.to_numeric(df_filtrado['ID'], errors='raise') #Raise the error instead of coerse it
                     df_competidores_nuevos['ID'] = pd.to_numeric(df_competidores_nuevos['ID'], errors='raise')
                 except ValueError as e: # Handle cases where some IDs cannot be converted to numbers
                     st.warning(f"Warning: Some IDs could not be converted to numbers: {e}.  Trying string conversion.")
-                    df['ID'] = df['ID'].astype(str)
+                    df_filtrado['ID'] = df_filtrado['ID'].astype(str)
                     df_competidores_nuevos['ID'] = df_competidores_nuevos['ID'].astype(str)
                 except KeyError as e:
                     st.error(f"La columna ID no existe en uno de los dataframes: {e}")
@@ -946,20 +949,17 @@ def main():
     
                 # Merge with Existing Data using concat:
                 try:
-                    df = pd.concat([df, df_competidores_nuevos], ignore_index=True)
+                    df_filtrado = pd.concat([df_filtrado, df_competidores_nuevos], ignore_index=True)
                 except Exception as e:
                     st.error(f"Error during concat: {e}")
                     return #Avoid the following code
-                st.write("DataFrame after CONCAT")
-                st.dataframe(df.head())
+                st.write("DataFrame FILTRADO after CONCAT")
+                st.dataframe(df_filtrado.head())
     
     
             except Exception as e:
                 st.error(f"Error al cargar el archivo de competidores: {e}")
                 return  # Exit if there's an error
-    
-        # 3) Filtro de Fecha (already applied to initial dataframe)
-        df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
     
         # 2) Selección del Vendedor (usando df_filtrado)
         lista_vendedores = df_filtrado['Vendedores'].unique()
@@ -1146,7 +1146,6 @@ def main():
     
     # Definir df_filtrado fuera de los bloques if/elif
     df_filtrado = pd.DataFrame() # DataFrame vacio como valor por defecto
-
     
 
 
