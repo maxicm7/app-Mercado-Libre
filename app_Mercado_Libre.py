@@ -28,7 +28,7 @@ def main():
                     return None  # Or raise an exception, depending on your error handling
 
                 df = pd.read_excel(carga_archivo)
-                df['OEM']=df['OEM'].astype(str)
+                
                 df = df.rename(columns={'Available Quantity': 'Cantidad Disponible',
                                          'health': 'Estado de Salud',
                                          'Seller2': 'Vendedores',
@@ -80,7 +80,7 @@ def main():
 
             # Filtro de fecha aplicado a todo el analisis de mercado
             df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
-            df_filtrado['OEM']=df_filtrado['OEM'].astype(str)
+            
 
             if df_filtrado.empty:
                 st.warning("No hay datos en el rango de fechas seleccionado.")
@@ -248,7 +248,7 @@ def main():
                     st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
 
-                oem_column = df_filtrado['OEM'].astype(str)  # Utiliza 'description' para OEM
+                oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
         
                 visits_column = df_filtrado['Visitas']
 
@@ -273,7 +273,7 @@ def main():
                 top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n)
 
                 # Almacenar resultados
-                resultados['Top OEMs (Eficiencia)'] = top_oem_efficiency.index.tolist().astype(str)
+                resultados['Top OEMs (Eficiencia)'] = [str(x) for x in top_oem_efficiency.index.tolist()]
                 resultados['Eficiencia Top OEMs'] = top_oem_efficiency.values.tolist()
 
                 # Create the bar chart with Plotly Express
