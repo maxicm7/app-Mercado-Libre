@@ -889,6 +889,7 @@ def main():
         if carga_archivo_competidores is not None:
             try:
                 df_competidores_nuevos = pd.read_excel(carga_archivo_competidores)
+                df_competidores_nuevos['OEM']=df_competidores_nuevos['OEM'].astype(int)
                 st.write("Datos de nuevos competidores cargados:")
                 st.dataframe(df_competidores_nuevos.head())
 
