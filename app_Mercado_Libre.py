@@ -900,6 +900,7 @@ def main():
                 try:
                     df['ID'] = pd.to_numeric(df['ID'], errors='raise') #Raise the error instead of coerse it
                     df_competidores_nuevos['ID'] = pd.to_numeric(df_competidores_nuevos['ID'], errors='raise')
+                    df_competidores_nuevos['OEM']=df_competidores_nuevos['OEM'].astype(int)
                 except ValueError as e: # Handle cases where some IDs cannot be converted to numbers
                     st.warning(f"Warning: Some IDs could not be converted to numbers: {e}.  Trying string conversion.")
                     df['ID'] = df['ID'].astype(str)
