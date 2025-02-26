@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from io import StringIO
+from io import BytesIO
 import base64
 
 # Configuración de la página
@@ -354,11 +354,14 @@ def main():
             st.subheader("DataFrame de Resultados")
             st.dataframe(df_resultados)
 
-            # --- Descargar DataFrame de Resultados a CSV ---
-            csv_resultados = df_resultados.to_csv(index=False)
-            b64_resultados = base64.b64encode(csv_resultados.encode()).decode()
-            href_resultados = f'<a href="data:file/csv;base64,{b64_resultados}" download="resultados.csv">Descargar DataFrame de Resultados como CSV</a>'
-            st.markdown(href_resultados, unsafe_allow_html=True)
+            # --- Descargar DataFrame de Resultados a Excel ---
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_resultados.to_excel(writer, index=False, sheet_name='Resultados')
+            excel_data = output.getvalue()
+            b64 = base64.b64encode(excel_data).decode('utf-8')
+            href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="resultados.xlsx">Descargar DataFrame de Resultados como Excel</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
             # --- DataFrame Combinado (Nueva Sección) ---
             st.subheader("DataFrame Combinado")
@@ -409,11 +412,14 @@ def main():
 
             if df_combinado is not None:
                 st.dataframe(df_combinado)
-                # Opción de descarga (csv)
-                csv_combinado = df_combinado.to_csv(index=False)
-                b64_combinado = base64.b64encode(csv_combinado.encode()).decode()
-                href_combinado = f'<a href="data:file/csv;base64,{b64_combinado}" download="data_combinada.csv">Descargar DataFrame Combinado como CSV</a>'
-                st.markdown(href_combinado, unsafe_allow_html=True)
+                # Opción de descarga (excel)
+                output = BytesIO()
+                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                    df_combinado.to_excel(writer, index=False, sheet_name='DataCombinada')
+                excel_data = output.getvalue()
+                b64 = base64.b64encode(excel_data).decode('utf-8')
+                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="data_combinada.xlsx">Descargar DataFrame Combinado como Excel</a>'
+                st.markdown(href, unsafe_allow_html=True)
 
             return df_resultados, df_combinado  # Retornar ambos DataFrames
 
@@ -604,7 +610,7 @@ def main():
 
             eficiencia = total_visitas / total_titulos
 
-            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
+                            st.metric(label=f"Eficiencia del Vendedor ({vendedores})", value=f"{eficiencia:.2f}") #Muestra el valor con dos decimales
 
             # No se necesita gráfico para un solo valor, pero podrías mostrarlo en un indicador
             # st.write(f"Eficiencia del Vendedor (Total Visitas / Total Títulos): {eficiencia:.2f}")
@@ -656,14 +662,14 @@ def main():
 
         if df_combinado is not None:
             st.dataframe(df_combinado)
-            # Opción de descarga (csv)
-            csv = df_combinado.to_csv(index=False)
-            st.download_button(
-                label="Descargar datos como CSV",
-                data=csv,
-                file_name='data_combinada.csv',
-                mime='text/csv',
-            )
+            # Opción de descarga (excel)
+            output = BytesIO()
+            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+                df_combinado.to_excel(writer, index=False, sheet_name='DataCombinada')
+            excel_data = output.getvalue()
+            b64 = base64.b64encode(excel_data).decode('utf-8')
+            href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="data_combinada.xlsx">Descargar DataFrame Combinado como Excel</a>'
+            st.markdown(href, unsafe_allow_html=True)
 
 
         
@@ -901,7 +907,7 @@ def main():
 
                 # Merge with Existing Data using concat:
                 try:
-                    df = pd.concat([df, df_competidores_nuevos], ignore_index=True)
+                    df = pd.concat([df_filtrado, df_competidores_nuevos], ignore_index=True)
                 except Exception as e:
                     st.error(f"Error during concat: {e}")
                     return #Avoid the following code
