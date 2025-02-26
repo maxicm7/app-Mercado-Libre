@@ -874,7 +874,7 @@ def main():
         
         
 
-        def estrategia_futura(df, fecha_inicio, fecha_fin):
+    def estrategia_futura(df, fecha_inicio, fecha_fin):
         st.header("Estrategia Futura")
     
         # 0) Estandarizar nombres de columnas (al inicio)
