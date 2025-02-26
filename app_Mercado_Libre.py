@@ -254,7 +254,7 @@ def main():
 
                 # Create a DataFrame for easier processing
                 df_oem = pd.DataFrame({'OEM': oem_column, 'Visitas': visits_column})
-                df_oem['OEM']=df['OEM'].astype(str)
+                
 
                 # Group by OEM and sum the visits
                 oem_visits = df_oem.groupby('OEM')['Visitas'].sum()
@@ -273,7 +273,7 @@ def main():
                 top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n)
 
                 # Almacenar resultados
-                resultados['Top OEMs (Eficiencia)'] = top_oem_efficiency.index.tolist()
+                resultados['Top OEMs (Eficiencia)'] = top_oem_efficiency.index.tolist().astype(str)
                 resultados['Eficiencia Top OEMs'] = top_oem_efficiency.values.tolist()
 
                 # Create the bar chart with Plotly Express
