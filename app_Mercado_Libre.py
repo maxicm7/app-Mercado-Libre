@@ -254,6 +254,7 @@ def main():
 
                 # Create a DataFrame for easier processing
                 df_oem = pd.DataFrame({'OEM': oem_column, 'Visitas': visits_column})
+                df_oem['OEM']=df['OEM'].astype(str)
 
                 # Group by OEM and sum the visits
                 oem_visits = df_oem.groupby('OEM')['Visitas'].sum()
