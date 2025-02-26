@@ -876,20 +876,42 @@ def main():
 
     def estrategia_futura(df, fecha_inicio, fecha_fin):
         st.header("Estrategia Futura")
-
-        # 1) Upload Nuevo Competidor Data
+    
+        # 0) Estandarizar nombres de columnas (al inicio)
+        def estandarizar_nombre_columna(df, columna_a_buscar, nombre_estandar):
+            for col in df.columns:
+                if columna_a_buscar.lower() in col.lower(): #Busca coincidencias parciales ignorando mayúsculas y minúsculas
+                    df.rename(columns={col: nombre_estandar}, inplace=True)
+                    return  # Sale despues de la primera coincidencia para no renombrar columnas incorrectamente
+            st.warning(f"Advertencia: No se encontró una columna similar a '{columna_a_buscar}'.")
+    
+    
         carga_archivo_competidores = st.file_uploader("Cargue el archivo de competidores por favor (Excel)", type=['xlsx'])
-
+    
         if carga_archivo_competidores is not None:
             try:
                 df_competidores_nuevos = pd.read_excel(carga_archivo_competidores)
                 st.write("Datos de nuevos competidores cargados:")
                 st.dataframe(df_competidores_nuevos.head())
-
+    
+                #Estandarizar columnas ANTES de concatenar
+                estandarizar_nombre_columna(df, 'OEM', 'OEM')
+                estandarizar_nombre_columna(df_competidores_nuevos, 'OEM', 'OEM')
+                estandarizar_nombre_columna(df, 'Vendedores', 'Vendedores')
+                estandarizar_nombre_columna(df_competidores_nuevos, 'Vendedores', 'Vendedores')
+                estandarizar_nombre_columna(df, 'ID', 'ID')
+                estandarizar_nombre_columna(df_competidores_nuevos, 'ID', 'ID')
+                estandarizar_nombre_columna(df, 'Fecha', 'Fecha')
+                estandarizar_nombre_columna(df_competidores_nuevos, 'Fecha', 'Fecha')
+    
+                # Convertir a string, quitar espacios y manejar nulos ANTES de concatenar
+                df['OEM'] = df['OEM'].astype(str).str.strip().str.lower().fillna('')
+                df_competidores_nuevos['OEM'] = df_competidores_nuevos['OEM'].astype(str).str.strip().str.lower().fillna('')
+    
                 # Diagnostic prints:
                 st.write("Original DataFrame ID dtype:", df['ID'].dtype)
                 st.write("Competitor DataFrame ID dtype:", df_competidores_nuevos['ID'].dtype)
-
+    
                 # **Key Conversion and Handling of Data Types**: Prioritize numeric handling
                 try:
                     df['ID'] = pd.to_numeric(df['ID'], errors='raise') #Raise the error instead of coerse it
@@ -898,7 +920,11 @@ def main():
                     st.warning(f"Warning: Some IDs could not be converted to numbers: {e}.  Trying string conversion.")
                     df['ID'] = df['ID'].astype(str)
                     df_competidores_nuevos['ID'] = df_competidores_nuevos['ID'].astype(str)
-
+                except KeyError as e:
+                    st.error(f"La columna ID no existe en uno de los dataframes: {e}")
+                    return
+    
+    
                 # Merge with Existing Data using concat:
                 try:
                     df = pd.concat([df, df_competidores_nuevos], ignore_index=True)
@@ -907,39 +933,50 @@ def main():
                     return #Avoid the following code
                 st.write("DataFrame after CONCAT")
                 st.dataframe(df.head())
-
-
+    
+                # Imprimir valores únicos de OEM DESPUÉS de concatenar
+                st.write("Valores únicos de OEM en el DataFrame combinado:", df['OEM'].unique())
+    
+    
             except Exception as e:
                 st.error(f"Error al cargar el archivo de competidores: {e}")
                 return  # Exit if there's an error
-
+    
         # 2) Selección del Vendedor
         lista_vendedores = df['Vendedores'].unique()
         vendedor_seleccionado = st.selectbox('Seleccione un Vendedor (para comparar con la competencia)', lista_vendedores)
-
+    
         # 3) Filtro de Fecha (already applied to initial dataframe)
         df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
-
+    
         # 4) Selección del OEM
         lista_oem = df_filtrado['OEM'].unique()
         oem_seleccionado = st.selectbox('Seleccione un OEM', lista_oem)
-
+    
+        # Imprimir el valor seleccionado de OEM
+        st.write("OEM seleccionado:", oem_seleccionado)
+    
         # Filter for the selected OEM
         df_oem = df_filtrado[df_filtrado['OEM'] == oem_seleccionado]
-
+    
+        # 5) Imprimir un mensaje si el DataFrame está vacío
+        if df_oem.empty:
+            st.warning(f"No se encontraron datos para el OEM seleccionado: '{oem_seleccionado}'.  Verifique que el nombre del OEM sea correcto y que exista en el rango de fechas seleccionado.")
+            return
+    
         #  Functions from Competencia - ALL INTEGRATED into estrategia_futura:
-
+    
         def variacion_precios_oem(df_oem, oem_seleccionado):
             """Shows the price variation ($) of the selected OEM. all vendors included."""
             if df_oem is None or 'Vendedores' not in df_oem.columns or 'Precio' not in df_oem.columns or 'OEM' not in df_oem.columns:
                 st.warning("Faltan columns ('Vendedores', 'Precio', 'OEM').")
                 return
-
+    
             df_competidores = df_oem.groupby('Vendedores')['Precio'].mean().reset_index()
             if df_competidores.empty:
                 st.warning(f"No hay vendedores del OEM '{oem_seleccionado}'.")
                 return
-
+    
             df_competidores['Precio'] = df_competidores['Precio'].apply(lambda x: '${:.2f}'.format(x))
             head = st.slider(f'Vendedores por Precio Promedio ({oem_seleccionado})', 1, len(df_competidores), min(10, len(df_competidores)), key = 'precios_fut')
             df_competidores = df_competidores.sort_values(by='Precio', ascending=False).head(head)
@@ -949,18 +986,18 @@ def main():
                         color='Precio', color_continuous_scale=px.colors.sequential.Plasma)
             fig.update_layout(xaxis_title='Vendedor', yaxis_title='Precio Promedio ($)', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
-
+    
         def variacion_cantidad_disponible_oem(df_oem, oem_seleccionado):
             """Variation of quantity of the selected OEM, All vendors included."""
             if df_oem is None or 'Vendedores' not in df_oem.columns or 'Cantidad Disponible' not in df_oem.columns or 'OEM' not in df_oem.columns:
                 st.warning("Error: Missing ('Vendedores', 'Cantidad Disponible', 'OEM').")
                 return
-
+    
             df_competidores = df_oem.groupby('Vendedores')['Cantidad Disponible'].mean().reset_index()
             if df_competidores.empty:
                 st.warning(f"No hay vendedores que vendan OEM '{oem_seleccionado}'.")
                 return
-
+    
             head = st.slider(f'Competidores por Variación de Cantidad Disponible ({oem_seleccionado})', 1, len(df_competidores), min(10, len(df_competidores)),key ='can_fut' )
             df_competidores = df_competidores.sort_values(by='Cantidad Disponible', ascending=False).head(head)
             fig = px.bar(df_competidores, x='Vendedores', y='Cantidad Disponible',
@@ -969,18 +1006,18 @@ def main():
                         color='Cantidad Disponible', color_continuous_scale=px.colors.sequential.Plasma)
             fig.update_layout(xaxis_title='Vendedor', yaxis_title='Cantidad Disponible Promedio', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
-
+    
         def variacion_health_oem(df_oem, oem_seleccionado):
             """Health Variation of the selected OEM, All vendors included."""
             if df_oem is None or 'Vendedores' not in df_oem.columns or 'Estado de Salud' not in df_oem.columns or 'OEM' not in df_oem.columns:
                 st.warning("Error: Missing columns ('Vendedores', 'Estado de Salud', 'OEM').")
                 return
-
+    
             df_competidores = df_oem.groupby('Vendedores')['Estado de Salud'].mean().reset_index()
             if df_competidores.empty:
                 st.warning(f"No hay competidores para el OEM '{oem_seleccionado}'.")
                 return
-
+    
             head = st.slider(f'Competidores por Variación de Health ({oem_seleccionado})', 1, len(df_competidores), min(10, len(df_competidores)), key = 'salud_fut')
             df_competidores = df_competidores.sort_values(by='Estado de Salud', ascending=False).head(head)
             fig = px.bar(df_competidores, x='Vendedores', y='Estado de Salud',
@@ -989,18 +1026,18 @@ def main():
                         color='Estado de Salud', color_continuous_scale=px.colors.sequential.Plasma)
             fig.update_layout(xaxis_title='Vendedor', yaxis_title='Health Promedio', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
-
+    
         def comparacion_visitas_oem(df, oem_seleccionado):
             """Compariing the visit of the selecte OEM between ALL Vendors."""
             if df is None or 'Vendedores' not in df.columns or 'Visitas' not in df.columns or 'OEM' not in df.columns:
                 st.warning("Error: Missing columns ('Vendedores', 'Visitas', 'OEM').")
                 return
-
+    
             df_competidores = df[df['OEM'] == oem_seleccionado].groupby('Vendedores')['Visitas'].sum().reset_index()
             if df_competidores.empty:
                 st.warning(f"No hay vendedores para el OEM '{oem_seleccionado}'.")
                 return
-
+    
             head = st.slider(f'Competidores por Visitas ({oem_seleccionado})', 1, len(df_competidores), min(10, len(df_competidores)),key = 'visitas_fut')
             df_competidores = df_competidores.sort_values(by='Visitas', ascending=False).head(head)
             fig = px.bar(df_competidores, x='Vendedores', y='Visitas',
@@ -1009,40 +1046,40 @@ def main():
                         color='Visitas', color_continuous_scale=px.colors.sequential.Plasma)
             fig.update_layout(xaxis_title='Vendedor', yaxis_title='Visitas', xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
-
-
+    
+    
         # Call ALL the Analysis functions:
-
+    
         st.subheader("Análisis de la Competencia por Precio")
         variacion_precios_oem(df_oem, oem_seleccionado)
-
+    
         st.subheader("Análisis de la Competencia por Cantidad Disponible")
         variacion_cantidad_disponible_oem(df_oem, oem_seleccionado)
-
+    
         st.subheader("Análisis de la Competencia por Estado de Salud")
         variacion_health_oem(df_oem, oem_seleccionado)
-
+    
         st.subheader("Análisis de la Competencia por Visitas")
         comparacion_visitas_oem(df_filtrado, oem_seleccionado) # Use df_filtrado
-
+    
         # 7) DataFrame Combinado
         st.subheader("DataFrame de Competencia (Incluyendo Nuevos Competidores)")
-
+    
         def crear_dataframe_competencia(df, oem_seleccionado):
             """Creates a DataFrame with information of all vendors for the OEM selected."""
             if df is None or 'Vendedores' not in df.columns or 'Título' not in df.columns or 'ID' not in df.columns or 'permalink' not in df.columns or 'Precio' not in df.columns or 'Cantidad Disponible' not in df.columns or 'Estado de Salud' not in df.columns or 'OEM' not in df.columns or 'Visitas' not in df.columns:
                 st.warning("Error: Missing columns. Chequea los datos y avisa a los admin.")
                 return None
-
+    
             df_competidores = df[df['OEM'] == oem_seleccionado]
-
+    
             if df_competidores.empty:
                 st.warning(f"No hay vendedores para el OEM '{oem_seleccionado}'.")
                 return None
-
+    
             # Force the type before aggregation:
             df_competidores['ID'] = df_competidores['ID'].astype(str)
-
+    
             df_resumen = df_competidores.groupby('Vendedores').agg(
                 {'Precio': 'mean',
                 'Cantidad Disponible': 'mean',
@@ -1053,23 +1090,23 @@ def main():
                 'permalink': 'first' # Agregamos permaLink
                 }).reset_index()
             df_resumen['ID'] = df_resumen['ID'].astype(str)
-
-
+    
+    
             # Formatear el precio como moneda ($)
             df_resumen['Precio'] = df_resumen['Precio'].apply(lambda x: '${:.2f}'.format(x))
-
+    
             df_resumen.rename(columns={'Precio': 'Precio Promedio',
                                     'Cantidad Disponible': 'Cantidad Disponible Promedio',
                                     'Estado de Salud': 'Health Promedio',
                                     'Visitas': 'Visitas Totales'}, inplace=True)
-
+    
             return df_resumen
-
+    
         df_competencia = crear_dataframe_competencia(df_oem, oem_seleccionado)
-
+    
         if df_competencia is not None:
             st.dataframe(df_competencia)
-
+    
             # CSV Download:
             csv = df_competencia.to_csv(index=False)
             st.download_button(
@@ -1078,17 +1115,17 @@ def main():
                 file_name=f'competencia_futura_{oem_seleccionado}.csv',
                 mime='text/csv',
             )
-
+    
     # Lógica principal basada en la selección del menú
     data = pagina_principal()  # Cargar los datos y guardarlos en la variable data
-
+    
     # Filtro de fecha global
     if data is not None and 'Fecha' in data.columns:
         fecha_minima = data['Fecha'].min()
         fecha_maxima = data['Fecha'].max()
         fecha_inicio = st.date_input("Fecha de inicio", value=fecha_minima)
         fecha_fin = st.date_input("Fecha de fin", value=fecha_maxima)
-
+    
         fecha_inicio = pd.to_datetime(fecha_inicio)
         fecha_fin = pd.to_datetime(fecha_fin)
     else:
@@ -1098,9 +1135,14 @@ def main():
             st.warning("Por favor, cargue los datos en la página principal.")
         else:
             st.warning("La columna 'Fecha' no se encuentra en los datos cargados.")
-
+    
     # Definir df_filtrado fuera de los bloques if/elif
     df_filtrado = pd.DataFrame() # DataFrame vacio como valor por defecto
+
+
+
+    
+
 
     if seleccion == 'Página Principal':
         pass  # La página principal ya se ha mostrado, no hay nada más que hacer aquí.
