@@ -28,7 +28,7 @@ def main():
                     return None  # Or raise an exception, depending on your error handling
 
                 df = pd.read_excel(carga_archivo)
-
+                df['OEM']=df['OEM'}.astype(str)
                 df = df.rename(columns={'Available Quantity': 'Cantidad Disponible',
                                          'health': 'Estado de Salud',
                                          'Seller2': 'Vendedores',
