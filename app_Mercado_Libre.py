@@ -1,9 +1,11 @@
 import streamlit as st
 import pandas as pd
+import tempfile
 import plotly.express as px
 from io import StringIO
 import base64
 import openpyxl  # Importa la librería openpyxl para guardar como xlsx
+from io import BytesIO
 
 # Configuración de la página
 st.set_page_config(page_title='ANALIZADOR DE MERCADO PARA MERCADO LIBRE', layout='wide')
