@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import plotly.express as px
-from io import BytesIO
+from io import StringIO
 import base64
 
 # Configuración de la página
@@ -28,7 +28,7 @@ def main():
                     return None  # Or raise an exception, depending on your error handling
 
                 df = pd.read_excel(carga_archivo)
-                
+
                 df = df.rename(columns={'Available Quantity': 'Cantidad Disponible',
                                          'health': 'Estado de Salud',
                                          'Seller2': 'Vendedores',
@@ -80,7 +80,6 @@ def main():
 
             # Filtro de fecha aplicado a todo el analisis de mercado
             df_filtrado = df[(df['Fecha'] >= fecha_inicio) & (df['Fecha'] <= fecha_fin)]
-            
 
             if df_filtrado.empty:
                 st.warning("No hay datos en el rango de fechas seleccionado.")
@@ -249,12 +248,10 @@ def main():
                     return
 
                 oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
-        
                 visits_column = df_filtrado['Visitas']
 
                 # Create a DataFrame for easier processing
                 df_oem = pd.DataFrame({'OEM': oem_column, 'Visitas': visits_column})
-                
 
                 # Group by OEM and sum the visits
                 oem_visits = df_oem.groupby('OEM')['Visitas'].sum()
@@ -273,7 +270,7 @@ def main():
                 top_oem_efficiency = oem_efficiency.sort_values(ascending=False).head(top_n)
 
                 # Almacenar resultados
-                resultados['Top OEMs (Eficiencia)'] = [str(x) for x in top_oem_efficiency.index.tolist()]
+                resultados['Top OEMs (Eficiencia)'] = top_oem_efficiency.index.tolist()
                 resultados['Eficiencia Top OEMs'] = top_oem_efficiency.values.tolist()
 
                 # Create the bar chart with Plotly Express
@@ -357,14 +354,11 @@ def main():
             st.subheader("DataFrame de Resultados")
             st.dataframe(df_resultados)
 
-            # --- Descargar DataFrame de Resultados a Excel ---
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_resultados.to_excel(writer, index=False, sheet_name='Resultados')
-            excel_data = output.getvalue()
-            b64 = base64.b64encode(excel_data).decode('utf-8')
-            href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="resultados.xlsx">Descargar DataFrame de Resultados como Excel</a>'
-            st.markdown(href, unsafe_allow_html=True)
+            # --- Descargar DataFrame de Resultados a CSV ---
+            csv_resultados = df_resultados.to_csv(index=False)
+            b64_resultados = base64.b64encode(csv_resultados.encode()).decode()
+            href_resultados = f'<a href="data:file/csv;base64,{b64_resultados}" download="resultados.csv">Descargar DataFrame de Resultados como CSV</a>'
+            st.markdown(href_resultados, unsafe_allow_html=True)
 
             # --- DataFrame Combinado (Nueva Sección) ---
             st.subheader("DataFrame Combinado")
@@ -415,14 +409,11 @@ def main():
 
             if df_combinado is not None:
                 st.dataframe(df_combinado)
-                # Opción de descarga (excel)
-                output = BytesIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_combinado.to_excel(writer, index=False, sheet_name='DataCombinada')
-                excel_data = output.getvalue()
-                b64 = base64.b64encode(excel_data).decode('utf-8')
-                href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="data_combinada.xlsx">Descargar DataFrame Combinado como Excel</a>'
-                st.markdown(href, unsafe_allow_html=True)
+                # Opción de descarga (csv)
+                csv_combinado = df_combinado.to_csv(index=False)
+                b64_combinado = base64.b64encode(csv_combinado.encode()).decode()
+                href_combinado = f'<a href="data:file/csv;base64,{b64_combinado}" download="data_combinada.csv">Descargar DataFrame Combinado como CSV</a>'
+                st.markdown(href_combinado, unsafe_allow_html=True)
 
             return df_resultados, df_combinado  # Retornar ambos DataFrames
 
@@ -665,14 +656,14 @@ def main():
 
         if df_combinado is not None:
             st.dataframe(df_combinado)
-            # Opción de descarga (excel)
-            output = BytesIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_combinado.to_excel(writer, index=False, sheet_name='DataCombinada')
-            excel_data = output.getvalue()
-            b64 = base64.b64encode(excel_data).decode('utf-8')
-            href = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64}" download="data_combinada.xlsx">Descargar DataFrame Combinado como Excel</a>'
-            st.markdown(href, unsafe_allow_html=True)
+            # Opción de descarga (csv)
+            csv = df_combinado.to_csv(index=False)
+            st.download_button(
+                label="Descargar datos como CSV",
+                data=csv,
+                file_name='data_combinada.csv',
+                mime='text/csv',
+            )
 
 
         
@@ -904,7 +895,6 @@ def main():
                 try:
                     df['ID'] = pd.to_numeric(df['ID'], errors='raise') #Raise the error instead of coerse it
                     df_competidores_nuevos['ID'] = pd.to_numeric(df_competidores_nuevos['ID'], errors='raise')
-                    df_competidores_nuevos['OEM']=df_competidores_nuevos['OEM'].astype(str)
                 except ValueError as e: # Handle cases where some IDs cannot be converted to numbers
                     st.warning(f"Warning: Some IDs could not be converted to numbers: {e}.  Trying string conversion.")
                     df['ID'] = df['ID'].astype(str)
