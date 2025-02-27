@@ -1,11 +1,8 @@
 import streamlit as st
 import pandas as pd
-import tempfile
 import plotly.express as px
 from io import StringIO
 import base64
-import openpyxl  # Importa la librería openpyxl para guardar como xlsx
-from io import BytesIO
 
 # Configuración de la página
 st.set_page_config(page_title='ANALIZADOR DE MERCADO PARA MERCADO LIBRE', layout='wide')
@@ -250,7 +247,7 @@ def main():
                     st.warning("El DataFrame no tiene las columnas necesarias ('description', 'Visitas'). Asegúrese de cargar los datos correctamente.")
                     return
 
-                oem_column = df_filtrado['OEM'].astype(str)  # Utiliza 'description' para OEM, y convierte a string
+                oem_column = df_filtrado['OEM']  # Utiliza 'description' para OEM
                 visits_column = df_filtrado['Visitas']
 
                 # Create a DataFrame for easier processing
@@ -357,19 +354,11 @@ def main():
             st.subheader("DataFrame de Resultados")
             st.dataframe(df_resultados)
 
-            # --- Descargar DataFrame de Resultados a XLSX ---
-            # Crear un buffer en memoria para el archivo XLSX
-            output = StringIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_resultados.to_excel(writer, index=False, sheet_name='Resultados')
-            xlsx_data = output.getvalue().encode('utf-8')  # Codificar como bytes UTF-8
-
-            # Codificar para la descarga
-            b64_resultados = base64.b64encode(xlsx_data).decode()
-            href_resultados = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_resultados}" download="resultados.xlsx">Descargar DataFrame de Resultados como XLSX</a>'
+            # --- Descargar DataFrame de Resultados a CSV ---
+            csv_resultados = df_resultados.to_csv(index=False)
+            b64_resultados = base64.b64encode(csv_resultados.encode()).decode()
+            href_resultados = f'<a href="data:file/csv;base64,{b64_resultados}" download="resultados.csv">Descargar DataFrame de Resultados como CSV</a>'
             st.markdown(href_resultados, unsafe_allow_html=True)
-
-
 
             # --- DataFrame Combinado (Nueva Sección) ---
             st.subheader("DataFrame Combinado")
@@ -420,16 +409,10 @@ def main():
 
             if df_combinado is not None:
                 st.dataframe(df_combinado)
-                # --- Descargar DataFrame Combinado a XLSX ---
-                # Crear un buffer en memoria para el archivo XLSX
-                output = StringIO()
-                with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                    df_combinado.to_excel(writer, index=False, sheet_name='Combinado')
-                xlsx_data = output.getvalue().encode('utf-8')  # Codificar como bytes UTF-8
-
-                # Codificar para la descarga
-                b64_combinado = base64.b64encode(xlsx_data).decode()
-                href_combinado = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_combinado}" download="data_combinada.xlsx">Descargar DataFrame Combinado como XLSX</a>'
+                # Opción de descarga (csv)
+                csv_combinado = df_combinado.to_csv(index=False)
+                b64_combinado = base64.b64encode(csv_combinado.encode()).decode()
+                href_combinado = f'<a href="data:file/csv;base64,{b64_combinado}" download="data_combinada.csv">Descargar DataFrame Combinado como CSV</a>'
                 st.markdown(href_combinado, unsafe_allow_html=True)
 
             return df_resultados, df_combinado  # Retornar ambos DataFrames
@@ -566,6 +549,7 @@ def main():
             head = st.slider('Top OEMs por Eficiencia', 1, 50, 20, key="oem_eficiencia")  # key para evitar conflicto de sliders
             df_eficiencia = df_eficiencia.head(head)
 
+            # Crear la gráfica
             fig = px.bar(df_eficiencia, x='OEM', y='Eficiencia',
                         title=f'Top {head} Eficiencia en el Mercado (OEM) para {vendedores}',
                         labels={'OEM': 'OEM', 'Eficiencia': 'Eficiencia'},
@@ -672,18 +656,23 @@ def main():
 
         if df_combinado is not None:
             st.dataframe(df_combinado)
-            # --- Descargar DataFrame Combinado a XLSX ---
-            # Crear un buffer en memoria para el archivo XLSX
-            output = StringIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_combinado.to_excel(writer, index=False, sheet_name='Combinado')
-            xlsx_data = output.getvalue().encode('utf-8')  # Codificar como bytes UTF-8
+            # Opción de descarga (csv)
+            csv = df_combinado.to_csv(index=False)
+            st.download_button(
+                label="Descargar datos como CSV",
+                data=csv,
+                file_name='data_combinada.csv',
+                mime='text/csv',
+            )
 
-            # Codificar para la descarga
-            b64_combinado = base64.b64encode(xlsx_data).decode()
-            href_combinado = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_combinado}" download="data_combinada.xlsx">Descargar DataFrame Combinado como XLSX</a>'
-            st.markdown(href_combinado, unsafe_allow_html=True)
+
         
+        
+        
+        
+        
+        
+            
     def competencia(df, fecha_inicio, fecha_fin):
         st.header("Análisis de la Competencia")
 
@@ -864,17 +853,15 @@ def main():
 
         if df_competencia is not None:
             st.dataframe(df_competencia)
-            # --- Descargar DataFrame Combinado a XLSX ---
-            # Crear un buffer en memoria para el archivo XLSX
-            output = StringIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_competencia.to_excel(writer, index=False, sheet_name='Combinado')
-            xlsx_data = output.getvalue().encode('utf-8')  # Codificar como bytes UTF-8
 
-            # Codificar para la descarga
-            b64_combinado = base64.b64encode(xlsx_data).decode()
-            href_combinado = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_combinado}" download="data_competencia.xlsx">Descargar DataFrame de la competencia como XLSX</a>'
-            st.markdown(href_combinado, unsafe_allow_html=True)
+            # Descarga CSV
+            csv = df_competencia.to_csv(index=False)
+            st.download_button(
+                label="Descargar datos de la competencia como CSV",
+                data=csv,
+                file_name=f'competencia_{oem_seleccionado}.csv',
+                mime='text/csv',
+            )
 
  
         
@@ -1084,17 +1071,14 @@ def main():
         if df_competencia is not None:
             st.dataframe(df_competencia)
 
-                        # --- Descargar DataFrame de Resultados a XLSX ---
-            # Crear un buffer en memoria para el archivo XLSX
-            output = StringIO()
-            with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-                df_competencia.to_excel(writer, index=False, sheet_name='Competencia')
-            xlsx_data = output.getvalue().encode('utf-8')  # Codificar como bytes UTF-8
-
-            # Codificar para la descarga
-            b64_combinado = base64.b64encode(xlsx_data).decode()
-            href_combinado = f'<a href="data:application/vnd.openxmlformats-officedocument.spreadsheetml.sheet;base64,{b64_combinado}" download="data_competencia_futura.xlsx">Descargar DataFrame de la competencia (incluyendo nuevos) como XLSX</a>'
-            st.markdown(href_combinado, unsafe_allow_html=True)
+            # CSV Download:
+            csv = df_competencia.to_csv(index=False)
+            st.download_button(
+                label="Descargar datos de la competencia (incluyendo nuevos) como CSV",
+                data=csv,
+                file_name=f'competencia_futura_{oem_seleccionado}.csv',
+                mime='text/csv',
+            )
 
     # Lógica principal basada en la selección del menú
     data = pagina_principal()  # Cargar los datos y guardarlos en la variable data
