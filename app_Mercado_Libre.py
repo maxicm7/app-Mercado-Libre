@@ -704,21 +704,36 @@ def main():
                 st.warning(f"No hay vendedores que vendan el OEM '{oem_seleccionado}'.")
                 return
 
-            # Formatear el precio como moneda ($)
-            df_competidores['Precio'] = df_competidores['Precio'].apply(lambda x: '${:.2f}'.format(x))
+            # Convertir la columna Precio a float antes de aplicar el formato
+            df_competidores['Precio'] = df_competidores['Precio'].astype(float)
+
+            max_vendedores = len(df_competidores)
+
+            if max_vendedores == 1:
+                st.warning("Solo hay un vendedor disponible, mostrando el precio sin comparación.")
+                df_competidores['Precio'] = df_competidores['Precio'].apply(lambda x: '${:.2f}'.format(x))
+                st.write(df_competidores)
+                return  # Terminar la función si solo hay un vendedor
 
             # Slider para el Top N
-            head = st.slider(f'Top Vendedores por Variación de Precio ({oem_seleccionado})', 1, len(df_competidores), min(10, len(df_competidores)), key = 'precio')
+            head = st.slider(
+                f'Top Vendedores por Variación de Precio ({oem_seleccionado})', 
+                1, max_vendedores, min(10, max_vendedores), key='precio'
+            )
 
             # Ordenar por precio y seleccionar el Top N
             df_competidores = df_competidores.sort_values(by='Precio', ascending=False).head(head)
+
+            # Aplicar formato a Precio después de la selección
+            df_competidores['Precio'] = df_competidores['Precio'].apply(lambda x: '${:.2f}'.format(x))
 
             # Crear gráfico de barras
             fig = px.bar(df_competidores, x='Vendedores', y='Precio',
                         title=f'Top {head} Vendedores por Precio Promedio ({oem_seleccionado})',
                         labels={'Vendedores': 'Vendedor', 'Precio': 'Precio Promedio ($)'},
                         color='Precio', color_continuous_scale=px.colors.sequential.Plasma)
-            fig.update_layout(xaxis_title='Vendedor', yaxis_title='Precio Promedio ($)', xaxis={'categoryorder': 'total descending'})
+            fig.update_layout(xaxis_title='Vendedor', yaxis_title='Precio Promedio ($)', 
+                            xaxis={'categoryorder': 'total descending'})
             st.plotly_chart(fig)
 
         def variacion_cantidad_disponible_oem(df_oem, oem_seleccionado):
