@@ -8,7 +8,7 @@ import base64
 st.set_page_config(page_title='ANALIZADOR DE MERCADO PARA MERCADO LIBRE', layout='wide')
 
 # Aumentar el tamaño máximo del archivo cargado a 1000MB (en bytes)
-MAX_FILE_SIZE = 1000 * 1024 * 1024  # 1000MB. Streamlit cloud tiene un limite de 200mb
+MAX_FILE_SIZE = 200 * 1024 * 1024  # 1000MB. Streamlit cloud tiene un limite de 200mb
 
 def main():
     # Titulo
